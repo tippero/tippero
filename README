@@ -9,6 +9,9 @@ Installation requirements:
 The daemon needs a running redis, bitmonerod and simplewallet. Set the connection parameters
 for these in tipbot.py.
 
+Before starting, read the configuration parameters at the top of tipbot.py and change
+as appropriate.
+
 Tipbot commands are prefix with "!". Try !help to get a list of available commands.
 
 The withdrawal fee is currently set to the default network fee. If a withdraw transaction

@@ -242,7 +242,7 @@ def Tip(nick,data):
       SendTo(sendto, "Invalid amount")
       return
     if units > balance:
-      SendTo(sendto, "You only have %.16g" % (balance / 1e12))
+      SendTo(sendto, "You only have %s" % (AmountToString(balance)))
       return
     log_info('Tip: %s tipping %s %u units, with balance %u' % (nick, who, units, balance))
     try:

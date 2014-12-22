@@ -1,6 +1,6 @@
 #!/bin/python
 #
-# Monero tipbot
+# Cryptonote tipbot
 # Copyright 2014 moneromooo
 # Inspired by "Simple Python IRC bot" by berend
 #
@@ -20,6 +20,7 @@ tipbot_name = "monero-testnet-tipbot"
 irc_network = 'irc.freenode.net'
 irc_port = 6667
 irc_homechan = '#txtptest000'
+irc_timeout_seconds = 600
 
 redis_host="127.0.0.1"
 redis_port=7777
@@ -29,9 +30,14 @@ bitmonerod_port = 28081 # 6060
 wallet_host = '127.0.0.1'
 wallet_port = 6061
 wallet_update_time = 30 # seconds
+coin=1e12
+coin_name = "Monero"
+address_length = [95, 95] # min/max size of addresses
+address_prefix = ['4', '9'] # allowed prefixes of addresses
 withdrawal_fee = 10000000000
 min_withdraw_amount = 2*withdrawal_fee
 withdraw_disabled = False
+web_wallet_url = "https://mymonero.com/" # None is there's none
 
 admins = ["moneromooo", "moneromoo"]
 
@@ -192,14 +198,17 @@ def AmountToString(amount):
   if amount == None:
     amount = 0
   lamount=long(amount)
-  if lamount < 1000000:
-    samount = "%u tacoshi" % lamount
-  elif lamount < 1000000000:
-    samount = " %.16g micromonero" % (float(lamount) / 1e6)
-  elif lamount < 1000000000000:
-    samount = " %.16g millimonero" % (float(lamount) / 1e9)
+  if coin_name == "monero" or coin_name == "Monero":
+    if lamount < 1000000:
+      samount = "%u tacoshi" % lamount
+    elif lamount < 1000000000:
+      samount = " %.16g micromonero" % (float(lamount) / 1e6)
+    elif lamount < 1000000000000:
+      samount = " %.16g millimonero" % (float(lamount) / 1e9)
+    else:
+      samount = "%.16g monero" % (float(lamount) / coin)
   else:
-    samount = "%.16g monero" % (float(lamount) / 1e12)
+      samount = "%.16g %s" % (float(lamount) / coin, coin_name)
   log_log("AmountToString: %s -> %s" % (str(amount),samount))
   return samount
 
@@ -234,13 +243,13 @@ def Tip(nick,data):
     SendTo(sendto, "Usage: tip nick amount")
     return
 
-  log_info("Tip: %s wants to tip %s %s monero" % (nick, who, AmountToString(amount)))
+  log_info("Tip: %s wants to tip %s %s" % (nick, who, AmountToString(amount)))
   try:
     balance = redis.hget("balances",nick)
     if balance == None:
       balance = 0
     balance=long(balance)
-    units=long(amount*1e12)
+    units=long(amount*coin)
     if units <= 0:
       SendTo(sendto, "Invalid amount")
       return
@@ -288,7 +297,7 @@ def Rain(nick,data):
   if users != None and users <= 0:
     SendTo(sendto, "Usage: rain amount [users]")
     return
-  units = long(amount * 1e12)
+  units = long(amount * coin)
 
   try:
     balance = redis.hget("balances",nick)
@@ -346,10 +355,10 @@ def DisableWithdraw():
 
 def Withdraw(nick,data):
   address=data[0]
-  if len(address) != 95:
+  if len(address) < address_length[0] or len(address) > address_length[1]:
     SendTo(nick, "Invalid address")
     return
-  if address[0] != '4' and address[0] != '9':
+  if not address[0] in address_prefix:
     SendTo(nick, "Invalid address")
     return
 
@@ -559,35 +568,36 @@ def DumpUsers(nick,data):
 
 def Help(nick):
   time.sleep(0.5)
-  SendTo(nick, "Help for the monero tipbot:")
+  SendTo(nick, "Help for %s:" % tipbot_name)
   SendTo(nick, "!isregistered - show whether you are currently registered with freenode")
   SendTo(nick, "!balance - show your current balance")
   SendTo(nick, "!tip <nick> <amount> - tip another user")
-  SendTo(nick, "!rain <amount> [<users>] - rain some monero on everyone (or just a few)")
+  SendTo(nick, "!rain <amount> [<users>] - rain some %s on everyone (or just a few)" % coin_name)
   SendTo(nick, "!withdraw <address> - withdraw your balance")
   SendTo(nick, "!info - information about the tipbot")
   time.sleep(0.5)
-  SendTo(nick, "You can send monero to your tipbot account:");
+  SendTo(nick, "You can send %s to your tipbot account:" % coin_name);
   SendTo(nick, "  Address: %s" % GetTipbotAddress())
   SendTo(nick, "  Payment ID: %s" % GetPaymentID(nick))
   SendTo(nick, "NO WARRANTY, YOU MAY LOSE YOUR COINS")
   time.sleep(0.5)
   SendTo(nick, "Minimum withdrawal: %s" % AmountToString(min_withdraw_amount))
   SendTo(nick, "Withdrawal fee: %s" % AmountToString(withdrawal_fee))
-  SendTo(nick, "No Monero address ? You can use https://mymonero.com/")
+  if web_wallet_url:
+    SendTo(nick, "No %s address ? You can use %s" % (coin_name, web_wallet_url))
 
 def Info(nick):
   time.sleep(0.5)
-  SendTo(nick, "Info for the monero tipbot:")
+  SendTo(nick, "Info for %s:" % tipbot_name)
   SendTo(nick, "Type !help for a list of commands")
   SendTo(nick, "NO WARRANTY, YOU MAY LOSE YOUR COINS")
   time.sleep(0.5)
-  SendTo(nick, "By sending your monero to the tipbot, you are giving up their control")
+  SendTo(nick, "By sending your %s to the tipbot, you are giving up their control" % coin_name)
   SendTo(nick, "to whoever runs the tipbot. Any tip you make/receive using the tipbot")
   SendTo(nick, "is obviously not anonymous. The tipbot wallet may end up corrupt, or be")
   SendTo(nick, "stolen, the server compromised, etc. While I hope this won't be the case,")
   SendTo(nick, "I will not offer any warranty whatsoever for the use of the tipbot or the")
-  SendTo(nick, "return of any monero. Use at your own risk.")
+  SendTo(nick, "return of any %s. Use at your own risk." % coin_name)
   SendTo(nick, "That being said, I hope you enjoy using it :)")
 
 def InitScanBlockHeight():
@@ -722,8 +732,8 @@ while True:
     UpdateCoin()
 
     if data == None:
-      if time.time() - last_ping_time > 600:
-        log_warn('600 seconds without PING, reconnecting')
+      if time.time() - last_ping_time > irc_timeout_seconds:
+        log_warn('%s seconds without PING, reconnecting' % irc_timeout_seconds)
         last_ping_time = time.time()
         connect_to_irc(irc_network,irc_port)
       continue

@@ -196,6 +196,7 @@ def AmountToString(amount):
     samount = " %.16g millimonero" % (float(lamount) / 1e9)
   else:
     samount = "%.16g monero" % (float(lamount) / 1e12)
+  log_log("AmountToString: %s -> %s" % (str(amount),samount))
   return samount
 
 def GetBalance(nick,data):
@@ -229,7 +230,7 @@ def Tip(nick,data):
     SendTo(sendto, "Usage: tip nick amount")
     return
 
-  log_info("Tip: %s wants to tip %s %.16g monero" % (nick, who, amount))
+  log_info("Tip: %s wants to tip %s %s monero" % (nick, who, AmountToString(amount)))
   try:
     balance = redis.hget("balances",nick)
     if balance == None:
@@ -248,7 +249,7 @@ def Tip(nick,data):
       p.hincrby("balances",nick,-units);
       p.hincrby("balances",who,units)
       p.execute()
-      SendTo(sendto,"%s has tipped %s %.16g monero" % (nick, who, amount))
+      SendTo(sendto,"%s has tipped %s %s" % (nick, who, AmountToString(units)))
     except Exception, e:
       SendTo(sendto, "An error occured")
       return
@@ -546,6 +547,7 @@ def DumpUsers(nick,data):
   log_info(str(userstable))
 
 def Help(nick):
+  time.sleep(0.5)
   SendTo(nick, "Help for the monero tipbot:")
   SendTo(nick, "!isregistered - show whether you are currently registered with freenode")
   SendTo(nick, "!balance - show your current balance")
@@ -553,18 +555,22 @@ def Help(nick):
   SendTo(nick, "!rain <amount> [<users>] - rain some monero on everyone (or just a few)")
   SendTo(nick, "!withdraw <address> - withdraw your balance")
   SendTo(nick, "!info - information about the tipbot")
+  time.sleep(0.5)
   SendTo(nick, "You can send monero to your tipbot account:");
   SendTo(nick, "  Address: %s" % GetTipbotAddress())
   SendTo(nick, "  Payment ID: %s" % GetPaymentID(nick))
   SendTo(nick, "NO WARRANTY, YOU MAY LOSE YOUR COINS")
+  time.sleep(0.5)
   SendTo(nick, "Minimum withdrawal: %s" % AmountToString(min_withdraw_amount))
   SendTo(nick, "Withdrawal fee: %s" % AmountToString(withdrawal_fee))
   SendTo(nick, "No Monero address ? You can use https://mymonero.com/")
 
 def Info(nick):
+  time.sleep(0.5)
   SendTo(nick, "Info for the monero tipbot:")
   SendTo(nick, "Type !help for a list of commands")
   SendTo(nick, "NO WARRANTY, YOU MAY LOSE YOUR COINS")
+  time.sleep(0.5)
   SendTo(nick, "By sending your monero to the tipbot, you are giving up their control")
   SendTo(nick, "to whoever runs the tipbot. Any tip you make/receive using the tipbot")
   SendTo(nick, "is obviously not anonymous. The tipbot wallet may end up corrupt, or be")

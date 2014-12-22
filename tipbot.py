@@ -23,8 +23,8 @@ irc_homechan = '#txtptest000'
 redis_host="127.0.0.1"
 redis_port=7777
 
-bitmonerod_host = '127.0.0.1'
-bitmonerod_port = 6060
+bitmonerod_host = 'testfull.monero.cc' # '127.0.0.1'
+bitmonerod_port = 28081 # 6060
 wallet_host = '127.0.0.1'
 wallet_port = 6061
 wallet_update_time = 30 # seconds
@@ -72,7 +72,7 @@ def connect_to_irc(network,port):
 
 def connect_to_redis(host,port):
   try:
-    redis = redis.Redis(host=host,port=port)
+    return redis.Redis(host=host,port=port)
   except Exception, e:
     log_error( 'Error initializing redis: %s' % str(e))
     exit()
@@ -544,6 +544,9 @@ def EnableWithdraw(nick,data):
   log_info('EnableWithdraw: enabled by %s' % nick)
   withdraw_disabled = False
 
+def DumpUsers(nick,data):
+  log_info(str(userstable))
+
 def Help(nick):
   SendTo(nick, "Help for the monero tipbot:")
   SendTo(nick, "!isregistered - show whether you are currently registered with freenode")
@@ -571,6 +574,16 @@ def Info(nick):
   SendTo(nick, "I will not offer any warranty whatsoever for the use of the tipbot or the")
   SendTo(nick, "return of any monero. Use at your own risk.")
   SendTo(nick, "That being said, I hope you enjoy using it :)")
+
+def InitScanBlockHeight():
+  try:
+    scan_block_height = redis.get("scan_block_height")
+    scan_block_height = long(scan_block_height)
+  except Exception,e:
+    try:
+      redis.set("scan_block_height",0)
+    except Exception,e:
+      log_error('Failed to initialize scan_block_height: %s' % str(e))
 
 def UpdateCoin():
   global last_wallet_update_time
@@ -683,7 +696,8 @@ def getline(s):
 
 
 connect_to_irc(irc_network,irc_port)
-connect_to_redis(irc_network,irc_port)
+redis = connect_to_redis(redis_host,redis_port)
+InitScanBlockHeight()
 
 while True:
     action = None
@@ -693,14 +707,17 @@ while True:
     UpdateCoin()
 
     if data == None:
-      if time.time() - last_ping_time > 60:
-        log_warn('60 seconds without PING, reconnecting')
+      if time.time() - last_ping_time > 600:
+        log_warn('600 seconds without PING, reconnecting')
         last_ping_time = time.time()
         connect_to_irc(irc_network,irc_port)
       continue
 
     data = data.strip("\r\n")
     log_IRCRECV(data)
+
+    # consider any IRC data as a ping
+    last_ping_time = time.time()
 
     if data.find ( 'Welcome to the freenode Internet Relay Chat Network' ) != -1:
       SendTo("nickserv", "IDENTIFY %s" % GetPassword())
@@ -718,14 +735,14 @@ while True:
       continue
 
     try:
-        parts = data.split(':')
-        if len(parts) < 2:
+        cparts = data.split(':')
+        if len(cparts) < 2:
             continue
-        if len(parts) >= 3:
-          text = parts[2]
+        if len(cparts) >= 3:
+          text = cparts[2]
         else:
           text = ""
-        parts = parts[1].split(' ')
+        parts = cparts[1].split(' ')
         who = parts[0]
         action = parts[1]
         chan = parts[2]
@@ -786,6 +803,20 @@ while True:
         except Exception,e:
           log_error('Failed to parse "who" line: %s: %s' % (data, str(e)))
 
+      elif action == '353':
+        try:
+          log_log("parts: %s" % str(parts))
+          who_chan = parts[4]
+          who_chan_users = cparts[2].split(" ")
+          for who_chan_user in who_chan_users:
+            if not who_chan_user in userstable[who_chan]:
+              if who_chan_user[0] == "@":
+                who_chan_user = who_chan_user[1:]
+              userstable[who_chan].append(who_chan_user)
+          log_log("New list of users in %s: %s" % (who_chan, str(userstable[who_chan])))
+        except Exception,e:
+          log_error('Failed to parse "who" line: %s: %s' % (data, str(e)))
+
       elif action == 'PRIVMSG':
         if text.find('!') != -1:
             cmd = text.split('!')[1]
@@ -842,6 +873,8 @@ while True:
                 CheckAdmin(GetNick(who),ScanWho,[chan],SendTo,"You must be admin")
             elif cmd[0] == 'enable_withdraw':
                 CheckAdmin(GetNick(who),EnableWithdraw,None,SendTo,"You must be admin")
+            elif cmd[0] == 'dump_users':
+                CheckAdmin(GetNick(who),DumpUsers,None,SendTo,"You must be admin")
             else:
                 SendTo(GetNick(who), "Invalid command, try !help")
 

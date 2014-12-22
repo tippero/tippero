@@ -32,6 +32,8 @@ withdrawal_fee = 10000000000
 min_withdraw_amount = 2*withdrawal_fee
 withdraw_disabled = False
 
+admins = ["moneromooo", "moneromoo"]
+
 userstable=dict()
 calltable=dict()
 last_wallet_update_time = None
@@ -130,11 +132,7 @@ def CheckRegistered(nick,ifyes,yesdata,ifno,nodata):
   SendTo('nickserv', "ACC " + nick)
 
 def IsAdmin(nick):
-  if nick == "moneromooo":
-    return True
-  if nick == "moneromoo":
-    return True
-  return False
+  return nick in admins
 
 def CheckAdmin(nick,ifyes,yesdata,ifno,nodata):
   if not IsAdmin(nick):

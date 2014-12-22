@@ -16,6 +16,7 @@ import json
 import httplib
 import time
 
+tipbot_name = "monero-testnet-tipbot"
 irc_network = 'irc.freenode.net'
 irc_port = 6667
 irc_homechan = '#txtptest000'
@@ -69,8 +70,8 @@ def connect_to_irc(network,port):
     exit()
   log_IRCRECV(irc.recv ( 4096 ))
   irc.send ( 'PASS *********\r\n')
-  irc.send ( 'NICK monero-tipbot\r\n' )
-  irc.send ( 'USER monero-tipbot monero-tipbot monero-tipbot :monero-tipbot\r\n' )
+  irc.send ( 'NICK %s\r\n' % tipbot_name)
+  irc.send ( 'USER %s %s %s :%s\r\n' % (tipbot_name, tipbot_name, tipbot_name, tipbot_name))
 
 def connect_to_redis(host,port):
   try:

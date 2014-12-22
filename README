@@ -15,6 +15,10 @@ as appropriate.
 The tipbot will need a wallet. Any wallet can do, but it is recommended to use a separate
 wallet. This wallet should be loaded in the simplewallet the tipbot connects to.
 
+A file called tipbot-password.txt shall be created where the tpibot runs, containing the
+Freenode account password for the tipbot. This is so the tipbot can identify, to avoid
+others passing off for the tipbot.
+
 Tipbot commands are prefix with "!". Try !help to get a list of available commands.
 
 The withdrawal fee is currently set to the default network fee. If a withdraw transaction

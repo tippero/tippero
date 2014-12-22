@@ -308,6 +308,9 @@ def Rain(nick,data):
       everyone = True
     else:
       everyone = False
+    if users == 0:
+      SendTo(sendto, "Nobody eligible for rain")
+      return
     if units < users:
       SendTo(sendto, "This would mean not even a tacoshi per nick")
       return

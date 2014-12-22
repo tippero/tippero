@@ -35,6 +35,9 @@ withdraw_disabled = False
 
 admins = ["moneromooo", "moneromoo"]
 
+# list of nicks to ignore for rains - bots, trolls, etc
+no_rain_to_nicks = []
+
 userstable=dict()
 calltable=dict()
 last_wallet_update_time = None
@@ -298,6 +301,8 @@ def Rain(nick,data):
 
     userlist = userstable[chan][:]
     userlist.remove(nick)
+    for n in no_rain_to_nicks:
+      userlist.remove(n)
     if users == None or users > len(userlist):
       users = len(userlist)
       everyone = True

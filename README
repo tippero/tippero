@@ -1,0 +1,19 @@
+This is a monero IRC tipbot.
+
+Installation requirements:
+  - monero
+  - python
+  - redis
+  - python-redis
+
+The daemon needs a running redis, bitmonerod and simplewallet. Set the connection parameters
+for these in tipbot.py.
+
+Tipbot commands are prefix with "!". Try !help to get a list of available commands.
+
+The withdrawal fee is currently set to the default network fee. If a withdraw transaction
+happens to be larger than 1 kB, more will be charged by simplewallet. The withdrawal fee
+can be set higher to guard against this.
+
+If a withdrawal error happens, withdrawals are disabled until enabled again by the operator,
+to avoid possible exploits.

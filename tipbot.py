@@ -331,6 +331,7 @@ def Rain(nick,data):
     return
 
 def DisableWithdraw():
+  global withdraw_disabled
   log_warn('DisableWithdraw: disabled')
   withdraw_disabled = True
 
@@ -540,6 +541,7 @@ def GetTipbotBalance(nick,data):
     SendTo(nick,"Tipbot balance: %s (%s pending)" % (AmountToString(unlocked_balance), AmountToString(pending)))
 
 def EnableWithdraw(nick,data):
+  global withdraw_disabled
   log_info('EnableWithdraw: enabled by %s' % nick)
   withdraw_disabled = False
 

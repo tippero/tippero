@@ -1,12 +1,12 @@
-This is a monero IRC tipbot.
+This is a Cryptonote IRC tipbot.
 
 Installation requirements:
-  - monero
+  - the daemon/simplewallet for the Cryptonote coin to use
   - python
   - redis
   - python-redis
 
-The daemon needs a running redis, bitmonerod and simplewallet. Set the connection parameters
+The daemon needs a running redis, daemon and simplewallet. Set the connection parameters
 for these in tipbot.py.
 
 Before starting, read the configuration parameters at the top of tipbot.py and change
@@ -21,9 +21,12 @@ others passing off for the tipbot.
 
 Tipbot commands are prefix with "!". Try !help to get a list of available commands.
 
-The withdrawal fee is currently set to the default network fee. If a withdraw transaction
-happens to be larger than 1 kB, more will be charged by simplewallet. The withdrawal fee
-can be set higher to guard against this.
+The withdrawal fee is currently set to the default network fee. For coins with per kB fees,
+if a withdraw transaction happens to be larger than 1 kB, more will be charged by
+simplewallet. The withdrawal fee can be set higher to guard against this.
 
 If a withdrawal error happens, withdrawals are disabled until enabled again by the operator,
 to avoid possible exploits.
+
+Coins that have a modified RPC command set from the base Cryptonote code may need to
+modify the tipbot.

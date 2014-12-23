@@ -15,6 +15,7 @@ import hashlib
 import json
 import httplib
 import time
+import string
 
 tipbot_name = "monero-testnet-tipbot"
 irc_network = 'irc.freenode.net'
@@ -843,7 +844,8 @@ while True:
           log_error('Failed to parse "who" line: %s: %s' % (data, str(e)))
 
       elif action == 'PRIVMSG':
-        if text.find('!') != -1:
+        exidx = text.find('!')
+        if exidx != -1 and len(text)>exidx+1 and text[exidx+1] in string.ascii_letters:
             cmd = text.split('!')[1]
             cmd = cmd.split(' ')
             cmd[0] = cmd[0].strip(' \t\n\r')

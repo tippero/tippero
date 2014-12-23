@@ -1,4 +1,4 @@
-This is a Cryptonote IRC tipbot.
+This is a Cryptonote IRC tipbot. Released under GPLv2+.
 
 Installation requirements:
   - the daemon/simplewallet for the Cryptonote coin to use

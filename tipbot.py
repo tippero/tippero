@@ -44,6 +44,7 @@ address_prefix = ['4', '9'] # allowed prefixes of addresses
 withdrawal_fee = 10000000000
 min_withdraw_amount = 2*withdrawal_fee
 withdraw_disabled = False
+disable_withdraw_on_error = True
 web_wallet_url = "https://mymonero.com/" # None is there's none
 
 admins = ["moneromooo", "moneromoo"]
@@ -354,10 +355,22 @@ def Rain(nick,data):
     SendTo(sendto, "An error has occured")
     return
 
-def DisableWithdraw():
+def DisableWithdraw(nick,data):
   global withdraw_disabled
-  log_warn('DisableWithdraw: disabled')
+  if nick:
+    log_warn('DisableWithdraw: disabled by %s' % nick)
+  else:
+    log_warn('DisableWithdraw: disabled')
   withdraw_disabled = True
+
+def EnableWithdraw(nick,data):
+  global withdraw_disabled
+  log_info('EnableWithdraw: enabled by %s' % nick)
+  withdraw_disabled = False
+
+def CheckDisableWithdraw():
+  if disable_withdraw_on_error:
+    DisableWithdraw(None,None)
 
 def Withdraw(nick,data):
   address=data[0]
@@ -408,18 +421,18 @@ def Withdraw(nick,data):
     j = SendWalletJSONRPCCommand("transfer",params)
   except Exception,e:
     log_error('Withdraw: Error in transfer: %s' % str(e))
-    DisableWithdraw()
+    CheckDisableWithdraw()
     SendTo(nick,"An error has occured")
     return
   if not "result" in j:
     log_error('Withdraw: No result in transfer reply')
-    DisableWithdraw()
+    CheckDisableWithdraw()
     SendTo(nick,"An error has occured")
     return
   result = j["result"]
   if not "tx_hash" in result:
     log_error('Withdraw: No tx_hash in transfer reply')
-    DisableWithdraw()
+    CheckDisableWithdraw()
     SendTo(nick,"An error has occured")
     return
   tx_hash = result["tx_hash"]
@@ -429,7 +442,7 @@ def Withdraw(nick,data):
     redis.hincrby("balances",nick,-balance)
   except Exception, e:
     log_error('Withdraw: FAILED TO SUBTRACT BALANCE: exception: %s' % str(e))
-    DisableWithdraw()
+    CheckDisableWithdraw()
 
   log_info('%s has withdrawn %s, tx hash %s' % (nick, balance, str(tx_hash)))
   SendTo(nick, "Tx sent: %s" % tx_hash)
@@ -563,11 +576,6 @@ def GetTipbotBalance(nick,data):
   else:
     log_info("GetTipbotBalance: Tipbot balance: %s (%s pending)" % (AmountToString(unlocked_balance), AmountToString(pending)))
     SendTo(nick,"Tipbot balance: %s (%s pending)" % (AmountToString(unlocked_balance), AmountToString(pending)))
-
-def EnableWithdraw(nick,data):
-  global withdraw_disabled
-  log_info('EnableWithdraw: enabled by %s' % nick)
-  withdraw_disabled = False
 
 def DumpUsers(nick,data):
   log_info(str(userstable))
@@ -923,6 +931,8 @@ while True:
                 CheckAdmin(GetNick(who),ScanWho,[chan],SendTo,"You must be admin")
             elif cmd[0] == 'enable_withdraw':
                 CheckAdmin(GetNick(who),EnableWithdraw,None,SendTo,"You must be admin")
+            elif cmd[0] == 'disable_withdraw':
+                CheckAdmin(GetNick(who),DisableWithdraw,None,SendTo,"You must be admin")
             elif cmd[0] == 'dump_users':
                 CheckAdmin(GetNick(who),DumpUsers,None,SendTo,"You must be admin")
             else:

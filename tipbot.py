@@ -32,6 +32,7 @@ wallet_port = 6061
 wallet_update_time = 30 # seconds
 coin=1e12
 coin_name = "Monero"
+coin_denominations = [[1000000, 1, "piconero"], [1000000000, 1e6, "micronero"], [1000000000000, 1e9, "millinero"]]
 address_length = [95, 95] # min/max size of addresses
 address_prefix = ['4', '9'] # allowed prefixes of addresses
 withdrawal_fee = 10000000000
@@ -198,16 +199,15 @@ def AmountToString(amount):
   if amount == None:
     amount = 0
   lamount=long(amount)
-  if coin_name == "monero" or coin_name == "Monero":
-    if lamount < 1000000:
-      samount = "%u tacoshi" % lamount
-    elif lamount < 1000000000:
-      samount = " %.16g micromonero" % (float(lamount) / 1e6)
-    elif lamount < 1000000000000:
-      samount = " %.16g millimonero" % (float(lamount) / 1e9)
-    else:
-      samount = "%.16g monero" % (float(lamount) / coin)
+  samount = None
+  if lamount == 0:
+    samount = "0 %s" % coin_name
   else:
+    for den in coin_denominations:
+      if lamount < den[0]:
+        samount = "%.16g %s" % (float(lamount) / den[1], den[2])
+        break
+  if not samount:
       samount = "%.16g %s" % (float(lamount) / coin, coin_name)
   log_log("AmountToString: %s -> %s" % (str(amount),samount))
   return samount
@@ -321,7 +321,7 @@ def Rain(nick,data):
       SendTo(sendto, "Nobody eligible for rain")
       return
     if units < users:
-      SendTo(sendto, "This would mean not even a tacoshi per nick")
+      SendTo(sendto, "This would mean not even an atomic unit per nick")
       return
     log_info("%s wants to rain %s on %s users in %s" % (nick, AmountToString(units), users, chan))
     log_log("users in %s: %s" % (chan, str(userlist)))

@@ -706,6 +706,9 @@ def getline(s):
         newdata = None
     except Exception,e:
       log_error('getline: Exception: %s' % str(e))
+      # Broken pipe when we get kicked for spam
+      if str(e).find("Broken pipe") != -1:
+        raise
       newdata = None
     if newdata == None:
       return None
@@ -727,14 +730,22 @@ InitScanBlockHeight()
 
 while True:
     action = None
-    data = getline(irc)
+    try:
+      data = getline(irc)
+    except Exception,e:
+      log_warn('Exception fron getline, we were probably disconnected, reconnecting in 5 seconds')
+      time.sleep(5)
+      last_ping_time = time.time()
+      connect_to_irc(irc_network,irc_port)
+      continue
 
     # All that must be done even when nothing from IRC - data may be None here
     UpdateCoin()
 
     if data == None:
       if time.time() - last_ping_time > irc_timeout_seconds:
-        log_warn('%s seconds without PING, reconnecting' % irc_timeout_seconds)
+        log_warn('%s seconds without PING, reconnecting in 5 seconds' % irc_timeout_seconds)
+        time.sleep(5)
         last_ping_time = time.time()
         connect_to_irc(irc_network,irc_port)
       continue
@@ -754,6 +765,13 @@ while True:
       log_log('Got PING, replying PONG')
       last_ping_time = time.time()
       irc.send ( 'PONG ' + data.split() [ 1 ] + '\r\n' )
+      continue
+
+    if data.find('ERROR :Closing Link:') == 0:
+      log_warn('We were kicked from IRC, reconnecting in 5 seconds')
+      time.sleep(5)
+      last_ping_time = time.time()
+      connect_to_irc(irc_network,irc_port)
       continue
 
     #--------------------------- Action check --------------------------------#

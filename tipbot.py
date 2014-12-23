@@ -585,6 +585,7 @@ def Help(nick):
   SendTo(nick, "Help for %s:" % tipbot_name)
   SendTo(nick, "!isregistered - show whether you are currently registered with freenode")
   SendTo(nick, "!balance - show your current balance")
+  time.sleep(0.5)
   SendTo(nick, "!tip <nick> <amount> - tip another user")
   SendTo(nick, "!rain <amount> [<users>] - rain some %s on everyone (or just a few)" % coin_name)
   SendTo(nick, "!withdraw <address> - withdraw your balance")
@@ -598,6 +599,7 @@ def Help(nick):
   SendTo(nick, "Minimum withdrawal: %s" % AmountToString(min_withdraw_amount))
   SendTo(nick, "Withdrawal fee: %s" % AmountToString(withdrawal_fee))
   if web_wallet_url:
+    time.sleep(0.5)
     SendTo(nick, "No %s address ? You can use %s" % (coin_name, web_wallet_url))
 
 def Info(nick):
@@ -610,6 +612,7 @@ def Info(nick):
   SendTo(nick, "to whoever runs the tipbot. Any tip you make/receive using the tipbot")
   SendTo(nick, "is obviously not anonymous. The tipbot wallet may end up corrupt, or be")
   SendTo(nick, "stolen, the server compromised, etc. While I hope this won't be the case,")
+  time.sleep(0.5)
   SendTo(nick, "I will not offer any warranty whatsoever for the use of the tipbot or the")
   SendTo(nick, "return of any %s. Use at your own risk." % coin_name)
   SendTo(nick, "That being said, I hope you enjoy using it :)")

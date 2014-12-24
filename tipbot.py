@@ -954,12 +954,23 @@ while True:
 
       elif action == 'PART':
         nick = GetNick(who)
-        log_info('%s joined the channel' % nick)
+        log_info('%s left the channel' % nick)
         if not nick in userstable[chan]:
-          log_warn('%s parted, but was not in %s' % (nick, chan))
+          log_warn('%s left, but was not in %s' % (nick, chan))
         else:
           userstable[chan].remove(nick)
         log_log("New list of users in %s: %s" % (chan, str(userstable[chan])))
+
+      elif action == 'QUIT':
+        nick = GetNick(who)
+        log_info('%s quit' % nick)
+        removed_list = ""
+        for chan in userstable:
+          log_log("Checking in %s" % chan)
+          if nick in userstable[chan]:
+            removed_list = removed_list + " " + chan
+            userstable[chan].remove(nick)
+            log_log("New list of users in %s: %s" % (chan, str(userstable[chan])))
 
       elif action == 'NICK':
         nick = GetNick(who)

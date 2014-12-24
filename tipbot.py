@@ -60,7 +60,8 @@ last_ping_time = time.time()
 
 
 def log(stype,msg):
-  print '%s\t%s\t%s' % (time.ctime(time.time()),stype,str(msg))
+  header = "%s\t%s\t" % (time.ctime(time.time()),stype)
+  print "%s%s" % (header, str(msg).replace("\n","\n"+header))
 
 def log_error(msg):
   log("ERROR",msg)

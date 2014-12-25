@@ -79,6 +79,13 @@ def log_log(msg):
 def log_IRCRECV(msg):
   log("IRCRECV",msg)
 
+def log_IRCSEND(msg):
+  log("IRCSEND",msg)
+
+def SendIRC(msg):
+  log_IRCSEND(msg)
+  irc.send(msg + '\r\n')
+
 def connect_to_irc(network,port):
   global irc
   try:
@@ -88,9 +95,9 @@ def connect_to_irc(network,port):
     log_error( 'Error initializing IRC: %s' % str(e))
     exit()
   log_IRCRECV(irc.recv ( 4096 ))
-  irc.send ( 'PASS *********\r\n')
-  irc.send ( 'NICK %s\r\n' % tipbot_name)
-  irc.send ( 'USER %s %s %s :%s\r\n' % (tipbot_name, tipbot_name, tipbot_name, tipbot_name))
+  SendIRC ( 'PASS *********')
+  SendIRC ( 'NICK %s' % tipbot_name)
+  SendIRC ( 'USER %s %s %s :%s' % (tipbot_name, tipbot_name, tipbot_name, tipbot_name))
 
 def connect_to_redis(host,port):
   try:
@@ -131,19 +138,19 @@ def GetPassword():
     return "xxx"
 
 def Send(msg):
-    irc.send('PRIVMSG ' + irc_homechan + ' : ' + msg +  '\r\n')
+    SendIRC ('PRIVMSG ' + irc_homechan + ' : ' + msg)
 
 def SendTo(where,msg):
-    irc.send('PRIVMSG ' + where + ' : ' + msg +  '\r\n')
+    SendIRC ('PRIVMSG ' + where + ' : ' + msg)
 
 def Join(chan):
-    irc.send ( 'JOIN ' + chan + '\r\n' )
+    SendIRC ( 'JOIN ' + chan)
 
 def Part(chan):
-    irc.send ( 'PART ' + chan + '\r\n' )
+    SendIRC ( 'PART ' + chan)
 
 def Who(chan):
-    irc.send ( 'WHO ' + chan + '\r\n' )
+    SendIRC ( 'WHO ' + chan)
 
 def CheckRegistered(nick,ifyes,yesdata,ifno,nodata):
   if nick not in calltable:
@@ -703,16 +710,16 @@ def UpdateCoin():
   last_wallet_update_time = time.time()
 
 #def Op(to_op, chan):
-#    irc.send( 'MODE ' + chan + ' +o: ' + to_op + '\r\n')
+#    SendIRC( 'MODE ' + chan + ' +o: ' + to_op)
 #
 #def DeOp(to_deop, chan):
-#    irc.send( 'MODE ' + chan + ' -o: ' + to_deop + '\r\n')
+#    SendIRC( 'MODE ' + chan + ' -o: ' + to_deop)
 #
 #def Voice(to_v, chan):
-#    irc.send( 'MODE ' + chan + ' +v: ' + to_v + '\r\n')
+#    SendIRC( 'MODE ' + chan + ' +v: ' + to_v)
 #
 #def DeVoice(to_dv, chan):
-#    irc.send( 'MODE ' + chan + ' -v: ' + to_dv + '\r\n')
+#    SendIRC( 'MODE ' + chan + ' -v: ' + to_dv)
 #------------------------------------------------------------------------------#
 
 buffered_data = ""
@@ -791,7 +798,7 @@ while True:
     if data.find ( 'PING' ) == 0:
       log_log('Got PING, replying PONG')
       last_ping_time = time.time()
-      irc.send ( 'PONG ' + data.split() [ 1 ] + '\r\n' )
+      SendIRC ( 'PONG ' + data.split() [ 1 ])
       continue
 
     if data.find('ERROR :Closing Link:') == 0:

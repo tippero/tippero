@@ -53,6 +53,7 @@ admins = ["moneromooo", "moneromoo"]
 no_rain_to_nicks = []
 
 userstable=dict()
+registered_users=set()
 calltable=dict()
 last_wallet_update_time = None
 last_ping_time = time.time()
@@ -148,7 +149,10 @@ def CheckRegistered(nick,ifyes,yesdata,ifno,nodata):
   if nick not in calltable:
     calltable[nick] = []
   calltable[nick].append([ifyes,yesdata,ifno,nodata])
-  SendTo('nickserv', "ACC " + nick)
+  if nick in registered_users:
+    PerformNextAction(nick,True)
+  else:
+    SendTo('nickserv', "ACC " + nick)
 
 def IsAdmin(nick):
   return nick in admins
@@ -161,6 +165,10 @@ def CheckAdmin(nick,ifyes,yesdata,ifno,nodata):
   CheckRegistered(nick,ifyes,yesdata,ifno,nodata)
 
 def PerformNextAction(nick,registered):
+  if registered:
+    registered_users.add(nick)
+  else:
+    registered_users.discard(nick)
   if nick not in calltable:
     log_error( 'Nothing in queue for %s' % nick)
     return
@@ -775,6 +783,7 @@ while True:
 
     if data.find ( 'Welcome to the freenode Internet Relay Chat Network' ) != -1:
       userstable = dict()
+      registered_users.clear()
       SendTo("nickserv", "IDENTIFY %s" % GetPassword())
       Join(irc_homechan)
       #ScanWho(None,[irc_homechan])

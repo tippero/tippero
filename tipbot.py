@@ -774,6 +774,7 @@ while True:
     last_ping_time = time.time()
 
     if data.find ( 'Welcome to the freenode Internet Relay Chat Network' ) != -1:
+      userstable = dict()
       SendTo("nickserv", "IDENTIFY %s" % GetPassword())
       Join(irc_homechan)
       #ScanWho(None,[irc_homechan])
@@ -866,7 +867,6 @@ while True:
 
       elif action == '353':
         try:
-          log_log("parts: %s" % str(parts))
           who_chan = parts[4]
           who_chan_users = cparts[2].split(" ")
           for who_chan_user in who_chan_users:

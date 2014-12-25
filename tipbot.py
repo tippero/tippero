@@ -250,17 +250,17 @@ def Tip(nick,data):
   except Exception,e:
     SendTo(sendto, "Usage: tip nick amount")
     return
+  units=long(amount*coin)
+  if units <= 0:
+    SendTo(sendto, "Invalid amount")
+    return
 
-  log_info("Tip: %s wants to tip %s %s" % (nick, who, AmountToString(amount)))
+  log_info("Tip: %s wants to tip %s %s" % (nick, who, AmountToString(units)))
   try:
     balance = redis.hget("balances",nick)
     if balance == None:
       balance = 0
     balance=long(balance)
-    units=long(amount*coin)
-    if units <= 0:
-      SendTo(sendto, "Invalid amount")
-      return
     if units > balance:
       SendTo(sendto, "You only have %s" % (AmountToString(balance)))
       return

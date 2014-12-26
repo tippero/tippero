@@ -390,19 +390,30 @@ def CheckDisableWithdraw():
 
 def Withdraw(nick,data):
   address=data[0]
+  amount=data[1]
   if len(address) < address_length[0] or len(address) > address_length[1]:
     SendTo(nick, "Invalid address")
     return
   if not address[0] in address_prefix:
     SendTo(nick, "Invalid address")
     return
+  if amount:
+    try:
+      famount=float(amount)
+      if (famount < 0):
+        raise RuntimeError("")
+      amount = long(famount * coin)
+      amount += withdrawal_fee
+    except Exception,e:
+      SendTo(nick, "Invalid amount")
+      return
 
   if min_withdraw_amount <= 0 or withdrawal_fee <= 0 or min_withdraw_amount < withdrawal_fee:
     log_error('Withdraw: Inconsistent withdrawal settings')
     SendTo(nick, "An error has occured")
     return
 
-  log_info("Withdraw: %s wants to withdraw to %s" % (nick, address))
+  log_info("Withdraw: %s wants to withdraw %s to %s" % (nick, AmountToString(amount) if amount else "all", address))
 
   if withdraw_disabled:
     log_error('Withdraw: disabled')
@@ -418,13 +429,22 @@ def Withdraw(nick,data):
     log_error('Withdraw: exception: %s' % str(e))
     SendTo(nick, "An error has occured")
     return
-  if balance <= 0 or balance < min_withdraw_amount:
-    log_info("Withdraw: Minimum withdrawal balance: %s, %s only has %s" % (AmountToString(min_withdraw_amount),nick,AmountToString(balance)))
-    SendTo(nick, "Minimum withdrawal balance: %s, you only have %s" % (AmountToString(min_withdraw_amount),AmountToString(balance)))
+
+  if amount:
+    if amount > balance:
+      log_info("Withdraw: %s trying to withdraw %s, but only has %s" % (nick,AmountToString(amount),AmountToString(balance)))
+      SendTo(nick, "You only have %s" % AmountToString(balance))
+      return
+  else:
+    amount = balance
+
+  if amount <= 0 or amount < min_withdraw_amount:
+    log_info("Withdraw: Minimum withdrawal balance: %s, %s cannot withdraw %s" % (AmountToString(min_withdraw_amount),nick,AmountToString(amount)))
+    SendTo(nick, "Minimum withdrawal balance: %s, cannot withdraw %s" % (AmountToString(min_withdraw_amount),AmountToString(amount)))
     return
   try:
     fee = long(withdrawal_fee)
-    topay = long(balance - fee)
+    topay = long(amount - fee)
     log_info('Withdraw: Raw: fee: %s, to pay: %s' % (str(fee), str(topay)))
     log_info('Withdraw: fee: %s, to pay: %s' % (AmountToString(fee), AmountToString(topay)))
     params = {
@@ -452,16 +472,14 @@ def Withdraw(nick,data):
     SendTo(nick,"An error has occured")
     return
   tx_hash = result["tx_hash"]
-  log_info('%s has withdrawn %s, tx hash %s' % (nick, balance, str(tx_hash)))
+  log_info('%s has withdrawn %s, tx hash %s' % (nick, amount, str(tx_hash)))
+  SendTo(nick, "Tx sent: %s" % tx_hash)
 
   try:
-    redis.hincrby("balances",nick,-balance)
+    redis.hincrby("balances",nick,-amount)
   except Exception, e:
     log_error('Withdraw: FAILED TO SUBTRACT BALANCE: exception: %s' % str(e))
     CheckDisableWithdraw()
-
-  log_info('%s has withdrawn %s, tx hash %s' % (nick, balance, str(tx_hash)))
-  SendTo(nick, "Tx sent: %s" % tx_hash)
 
 def SendJSONRPCCommand(host,port,method,params):
   try:
@@ -604,7 +622,7 @@ def Help(nick):
   time.sleep(0.5)
   SendTo(nick, "!tip <nick> <amount> - tip another user")
   SendTo(nick, "!rain <amount> [<users>] - rain some %s on everyone (or just a few)" % coin_name)
-  SendTo(nick, "!withdraw <address> - withdraw your balance")
+  SendTo(nick, "!withdraw <address> [<amount>] - withdraw part or all of your balance")
   SendTo(nick, "!info - information about the tipbot")
   time.sleep(0.5)
   SendTo(nick, "You can send %s to your tipbot account:" % coin_name);
@@ -923,8 +941,11 @@ while True:
                 else:
                     SendTo(GetNick(who), "Usage: !tip nick amount");
             elif cmd[0] == 'withdraw':
-                if len(cmd) == 2:
-                    CheckRegistered(GetNick(who),Withdraw,[cmd[1]],SendTo,"You must be registered with Freenode to withdraw")
+                if len(cmd) == 2 or len(cmd) == 3:
+                    amount = None
+                    if len(cmd) == 3:
+                      amount = cmd[2]
+                    CheckRegistered(GetNick(who),Withdraw,[cmd[1],amount],SendTo,"You must be registered with Freenode to withdraw")
                 else:
                     SendTo(GetNick(who), "Usage: !withdraw address");
             elif cmd[0] == 'info':

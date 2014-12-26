@@ -152,6 +152,14 @@ def Part(chan):
 def Who(chan):
     SendIRC ( 'WHO ' + chan)
 
+def IsParamPresent(parms,idx):
+  return len(parms) > idx
+
+def GetParam(parms,idx):
+  if IsParamPresent(parms,idx):
+    return parms[idx]
+  return None
+
 def CheckRegistered(nick,ifyes,yesdata,ifno,nodata):
   if nick not in calltable:
     calltable[nick] = []
@@ -305,14 +313,13 @@ def Rain(nick,data):
   except Exception,e:
     SendTo(sendto, "Usage: rain amount [users]")
     return
-  try:
-    if data[2] == None:
-      users = None
-    else:
-      users=long(data[2])
-  except Exception,e:
-    SendTo(sendto, "Usage: rain amount [users]")
-    return
+  users = GetParam(data,2)
+  if users:
+    try:
+      users=long(users)
+    except Exception,e:
+      SendTo(sendto, "Usage: rain amount [users]")
+      return
 
   if amount <= 0:
     SendTo(sendto, "Usage: rain amount [users]")
@@ -398,10 +405,10 @@ def IsValidAddress(address):
 
 def Withdraw(nick,data):
   address=data[0]
-  amount=data[1]
   if not IsValidAddress(address):
     SendTo(nick, "Invalid address")
     return
+  amount = GetParam(data,1)
   if amount:
     try:
       famount=float(amount)
@@ -994,15 +1001,14 @@ while True:
                 CheckRegistered(GetNick(who),GetBalance,[sendto],SendTo,"You must be registered with Freenode to query balance")
             elif cmd[0] == 'tip':
                 if len(cmd) == 3:
-                    CheckRegistered(GetNick(who),Tip,[sendto,cmd[1],cmd[2]],SendTo,"You must be registered with Freenode to tip")
+                    parms=[sendto]
+                    parms.extend(cmd[1:])
+                    CheckRegistered(GetNick(who),Tip,parms,SendTo,"You must be registered with Freenode to tip")
                 else:
                     SendTo(GetNick(who), "Usage: !tip nick amount");
             elif cmd[0] == 'withdraw':
                 if len(cmd) == 2 or len(cmd) == 3:
-                    amount = None
-                    if len(cmd) == 3:
-                      amount = cmd[2]
-                    CheckRegistered(GetNick(who),Withdraw,[cmd[1],amount],SendTo,"You must be registered with Freenode to withdraw")
+                    CheckRegistered(GetNick(who),Withdraw,cmd[1:],SendTo,"You must be registered with Freenode to withdraw")
                 else:
                     SendTo(GetNick(who), "Usage: !withdraw address");
             elif cmd[0] == 'info':
@@ -1010,12 +1016,11 @@ while True:
             elif cmd[0] == 'rain':
                 if chan[0] == '#':
                   if len(cmd) == 2 or len(cmd) == 3:
-                      users = None
-                      if len(cmd) == 3:
-                        users = cmd[2]
-                      CheckRegistered(GetNick(who),Rain,[chan,cmd[1],users],SendTo,"You must be registered with Freenode to rain")
+                    parms=[chan]
+                    parms.extend(cmd[1:])
+                    CheckRegistered(GetNick(who),Rain,parms,SendTo,"You must be registered with Freenode to rain")
                   else:
-                      SendTo(sendto, "Usage: !rain amount [users]");
+                    SendTo(sendto, "Usage: !rain amount [users]");
                 else:
                   SendTo(sendto, "Raining can only be done in a channel")
             # admin commands
@@ -1035,7 +1040,7 @@ while True:
                 CheckAdmin(GetNick(who),DumpUsers,None,SendTo,"You must be admin")
             elif cmd[0] == 'show_activity':
                 if len(cmd)==3:
-                  CheckAdmin(GetNick(who),ShowActivity,[cmd[1],cmd[2]],SendTo,"You must be admin")
+                  CheckAdmin(GetNick(who),ShowActivity,cmd[1:],SendTo,"You must be admin")
                 else:
                   SendTo(sendto,"Usage: show_activity channel nick")
             else:

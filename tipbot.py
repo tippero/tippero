@@ -295,7 +295,7 @@ def Tip(nick,data):
 
 def ScanWho(nick,data):
   chan=data[0]
-  userstable[chan] = []
+  userstable[chan] = dict()
   Who(chan)
 
 def Rain(nick,data):
@@ -331,7 +331,7 @@ def Rain(nick,data):
       SendTo(sendto, "You only have %s" % (AmountToString(balance)))
       return
 
-    userlist = userstable[chan][:]
+    userlist = userstable[chan].keys()
     userlist.remove(nick)
     for n in no_rain_to_nicks:
       userlist.remove(n)
@@ -732,6 +732,57 @@ def UpdateCoin():
     log_error('UpdateCoin: Failed to get bulk payments: %s' % str(e))
   last_wallet_update_time = time.time()
 
+def UpdateLastActiveTime(chan,nick):
+  if not chan in userstable:
+    log_error("UpdateLastActiveTime: %s spoke in %s, but %s not found in users table" % (nick, chan, chan))
+    userstable[chan] = dict()
+  if not nick in userstable[chan]:
+    log_error("UpdateLastActiveTime: %s spoke in %s, but was not found in that channel's users table" % (nick, chan))
+    userstable[chan][nick] = None
+  userstable[chan][nick] = time.time()
+
+def GetTimeSinceActive(chan,nick):
+  if not chan in userstable:
+    log_error("GetTimeSinceActive: channel %s not found in users table" % chan)
+    return None
+  if not nick in userstable[chan]:
+    log_error("GetTimeSinceActive: %s not found in channel %s's users table" % (nick, chan))
+    return None
+  t = userstable[chan][nick]
+  if t == None:
+    return None
+  dt = time.time() - t
+  if dt < 0:
+    log_error("GetTimeSinceActive: %s active in %s in the future" % (nick, chan))
+    return None
+  return dt
+
+def GetActiveNicks(chan,seconds):
+  nicks = []
+  if not chan in userstable:
+    return []
+  now = time.time()
+  for nick in userstable[chan]:
+    t = userstable[chan][nick]
+    if t == None:
+      continue
+    dt = now - t
+    if dt < 0:
+      log_error("GetActiveNicks: %s active in %s in the future" % (nick, chan))
+      continue
+    if dt < seconds:
+      nicks.append(nick)
+  return nicks
+
+def ShowActivity(nick,data):
+  achan=data[0]
+  anick=data[1]
+  activity = GetTimeSinceActive(achan,anick)
+  if activity:
+    SendTo(nick,"%s was active in %s %f seconds ago" % (anick,achan,activity))
+  else:
+    SendTo(nick,"%s was never active in %s" % (anick,achan))
+
 #def Op(to_op, chan):
 #    SendIRC( 'MODE ' + chan + ' +o: ' + to_op)
 #
@@ -899,8 +950,8 @@ while True:
           who_chan = parts[3]
           who_chan_user = parts[7]
           if not who_chan_user in userstable[who_chan]:
-            userstable[who_chan].append(who_chan_user)
-          log_log("New list of users in %s: %s" % (who_chan, str(userstable[who_chan])))
+            userstable[who_chan][who_chan_user] = None
+          log_log("New list of users in %s: %s" % (who_chan, str(userstable[who_chan].keys())))
         except Exception,e:
           log_error('Failed to parse "who" line: %s: %s' % (data, str(e)))
 
@@ -912,12 +963,13 @@ while True:
             if not who_chan_user in userstable[who_chan]:
               if who_chan_user[0] == "@":
                 who_chan_user = who_chan_user[1:]
-              userstable[who_chan].append(who_chan_user)
-          log_log("New list of users in %s: %s" % (who_chan, str(userstable[who_chan])))
+              userstable[who_chan][who_chan_user] = None
+          log_log("New list of users in %s: %s" % (who_chan, str(userstable[who_chan].keys())))
         except Exception,e:
           log_error('Failed to parse "who" line: %s: %s' % (data, str(e)))
 
       elif action == 'PRIVMSG':
+        UpdateLastActiveTime(chan,GetNick(who))
         exidx = text.find('!')
         if exidx != -1 and len(text)>exidx+1 and text[exidx+1] in string.ascii_letters:
             cmd = text.split('!')[1]
@@ -981,6 +1033,11 @@ while True:
                 CheckAdmin(GetNick(who),DisableWithdraw,None,SendTo,"You must be admin")
             elif cmd[0] == 'dump_users':
                 CheckAdmin(GetNick(who),DumpUsers,None,SendTo,"You must be admin")
+            elif cmd[0] == 'show_activity':
+                if len(cmd)==3:
+                  CheckAdmin(GetNick(who),ShowActivity,[cmd[1],cmd[2]],SendTo,"You must be admin")
+                else:
+                  SendTo(sendto,"Usage: show_activity channel nick")
             else:
                 SendTo(GetNick(who), "Invalid command, try !help")
 
@@ -988,12 +1045,12 @@ while True:
         nick = GetNick(who)
         log_info('%s joined the channel' % nick)
         if not chan in userstable:
-          userstable[chan] = []
+          userstable[chan] = dict()
         if nick in userstable[chan]:
           log_warn('%s joined, but already in %s' % (nick, chan))
         else:
-          userstable[chan].append(nick)
-        log_log("New list of users in %s: %s" % (chan, str(userstable[chan])))
+          userstable[chan][nick] = None
+        log_log("New list of users in %s: %s" % (chan, str(userstable[chan].keys())))
 
       elif action == 'PART':
         nick = GetNick(who)
@@ -1001,8 +1058,8 @@ while True:
         if not nick in userstable[chan]:
           log_warn('%s left, but was not in %s' % (nick, chan))
         else:
-          userstable[chan].remove(nick)
-        log_log("New list of users in %s: %s" % (chan, str(userstable[chan])))
+          del userstable[chan][nick]
+        log_log("New list of users in %s: %s" % (chan, str(userstable[chan].keys())))
 
       elif action == 'QUIT':
         nick = GetNick(who)
@@ -1012,8 +1069,8 @@ while True:
           log_log("Checking in %s" % chan)
           if nick in userstable[chan]:
             removed_list = removed_list + " " + chan
-            userstable[chan].remove(nick)
-            log_log("New list of users in %s: %s" % (chan, str(userstable[chan])))
+            del userstable[chan][nick]
+            log_log("New list of users in %s: %s" % (chan, str(userstable[chan].keys())))
 
       elif action == 'NICK':
         nick = GetNick(who)
@@ -1022,12 +1079,12 @@ while True:
         for c in userstable:
           log_log('checking %s' % c)
           if nick in userstable[c]:
-            userstable[c].remove(nick)
+            del userstable[c][nick]
             if new_nick in userstable[c]:
               log_warn('%s is the new name of %s, but was already in %s' % (new_nick, nick, c))
             else:
-              userstable[c].append(new_nick)
-          log_log("New list of users in %s: %s" % (c, str(userstable[c])))
+              userstable[c][new_nick] = None
+          log_log("New list of users in %s: %s" % (c, str(userstable[c].keys())))
 
     except Exception,e:
       log_error('Exception in top level action processing: %s' % str(e))

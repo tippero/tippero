@@ -388,13 +388,18 @@ def CheckDisableWithdraw():
   if disable_withdraw_on_error:
     DisableWithdraw(None,None)
 
+def IsValidAddress(address):
+  if len(address) < address_length[0] or len(address) > address_length[1]:
+    return False
+  for prefix in address_prefix:
+    if address.startswith(prefix):
+      return True
+  return False
+
 def Withdraw(nick,data):
   address=data[0]
   amount=data[1]
-  if len(address) < address_length[0] or len(address) > address_length[1]:
-    SendTo(nick, "Invalid address")
-    return
-  if not address[0] in address_prefix:
+  if not IsValidAddress(address):
     SendTo(nick, "Invalid address")
     return
   if amount:

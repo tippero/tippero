@@ -751,6 +751,7 @@ def Help(nick):
 def Info(nick):
   time.sleep(0.5)
   SendTo(nick, "Info for %s:" % tipbot_name)
+  SendTo(nick, "Copyright 2014 moneromooo - http://duckpool.mooo.com/tipbot/")
   SendTo(nick, "Type !help for a list of commands")
   SendTo(nick, "NO WARRANTY, YOU MAY LOSE YOUR COINS")
   time.sleep(0.5)

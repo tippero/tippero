@@ -378,6 +378,105 @@ def Rain(nick,data):
     SendTo(sendto, "An error has occured")
     return
 
+def RainActive(nick,data):
+  chan=data[0]
+  amount=GetParam(data,1)
+  hours=GetParam(data,2)
+  minfrac=GetParam(data,3)
+
+  try:
+    amount=float(amount)
+    if amount <= 0:
+      raise RuntimeError("")
+  except Exception,e:
+    SendTo(sendto, "Invalid amount")
+    return
+  try:
+    hours=float(hours)
+    if hours <= 0:
+      raise RuntimeError("")
+  except Exception,e:
+    SendTo(sendto, "Invalid hours")
+    return
+  if minfrac:
+    try:
+      minfrac=float(minfrac)
+      if minfrac < 0 or minfrac > 1:
+        raise RuntimeError("")
+    except Exception,e:
+      SendTo(sendto, "minfrac must be a number between 0 and 1")
+      return
+  else:
+    minfrac = 0
+
+  units = long(amount * coin)
+
+  try:
+    balance = redis.hget("balances",nick)
+    if balance == None:
+      balance = 0
+    balance=long(balance)
+    if units > balance:
+      SendTo(sendto, "You only have %s" % (AmountToString(balance)))
+      return
+
+    now = time.time()
+    userlist = userstable[chan].keys()
+    userlist.remove(nick)
+    for n in no_rain_to_nicks:
+      userlist.remove(n)
+    weights=dict()
+    weight=0
+    for n in userlist:
+      t = userstable[chan][n]
+      if t == None:
+        continue
+      dt = now - t
+      if dt <= hours * 3600:
+        w = (1 * (hours * 3600 - dt) + minfrac * (1 - (hours * 3600 - dt))) / (hours * 3600)
+        weights[n] = w
+        weight += w
+
+    if len(weights) == 0:
+      SendTo(sendto, "Nobody eligible for rain")
+      return
+
+#    if units < users:
+#      SendTo(sendto, "This would mean not even an atomic unit per nick")
+#      return
+
+    pipe = redis.pipeline()
+    pipe.hincrby("balances",nick,-units)
+    rained_units = 0
+    nnicks = 0
+    minu=None
+    maxu=None
+    for n in weights:
+      user_units = long(units * weights[n] / weight)
+      if user_units <= 0:
+        continue
+      log_info("%s rained %s on %s (last active %f hours ago)" % (nick, AmountToString(user_units),n,GetTimeSinceActive(chan,n)/3600))
+      pipe.hincrby("balances",n,user_units)
+      rained_units += user_units
+      if not minu or user_units < minu:
+        minu = user_units
+      if not maxu or user_units > maxu:
+        maxu = user_units
+      nnicks = nnicks+1
+
+    if maxu == None:
+      SendTo(sendto, "This would mean not even an atomic unit per nick")
+      return
+
+    pipe.execute()
+    log_info("%s rained %s - %s (total %s, acc %s) on the %d nicks active in the last %f hours" % (nick, AmountToString(minu), AmountToString(maxu), AmountToString(units), AmountToString(rained_units), nnicks, hours))
+    SendTo(sendto, "%s rained %s - %s on the %d nicks active in the last %f hours" % (nick, AmountToString(minu), AmountToString(maxu), nnicks, hours))
+
+  except Exception,e:
+    log_error('Rain: exception: %s' % str(e))
+    SendTo(sendto, "An error has occured")
+    return
+
 def DisableWithdraw(nick,data):
   global withdraw_disabled
   if nick:
@@ -634,6 +733,7 @@ def Help(nick):
   time.sleep(0.5)
   SendTo(nick, "!tip <nick> <amount> - tip another user")
   SendTo(nick, "!rain <amount> [<users>] - rain some %s on everyone (or just a few)" % coin_name)
+  SendTo(nick, "!rainactive <amount> <hours> [minfrac]- rain some %s on who was active recently" % coin_name)
   SendTo(nick, "!withdraw <address> [<amount>] - withdraw part or all of your balance")
   SendTo(nick, "!info - information about the tipbot")
   time.sleep(0.5)
@@ -1019,6 +1119,16 @@ while True:
                     parms=[chan]
                     parms.extend(cmd[1:])
                     CheckRegistered(GetNick(who),Rain,parms,SendTo,"You must be registered with Freenode to rain")
+                  else:
+                    SendTo(sendto, "Usage: !rain amount [users]");
+                else:
+                  SendTo(sendto, "Raining can only be done in a channel")
+            elif cmd[0] == 'rainactive':
+                if chan[0] == '#':
+                  if len(cmd) == 3 or len(cmd) == 4:
+                    parms=[chan]
+                    parms.extend(cmd[1:])
+                    CheckRegistered(GetNick(who),RainActive,parms,SendTo,"You must be registered with Freenode to rain")
                   else:
                     SendTo(sendto, "Usage: !rain amount [users]");
                 else:

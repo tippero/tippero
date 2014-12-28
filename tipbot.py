@@ -44,8 +44,8 @@ irc_timeout_seconds = 600
 redis_host="127.0.0.1"
 redis_port=7777
 
-bitmonerod_host = 'testfull.monero.cc' # '127.0.0.1'
-bitmonerod_port = 28081 # 6060
+daemon_host = 'testfull.monero.cc' # '127.0.0.1'
+daemon_port = 28081 # 6060
 wallet_host = '127.0.0.1'
 wallet_port = 6061
 wallet_update_time = 30 # seconds
@@ -670,16 +670,16 @@ def SendHTMLCommand(host,port,method):
 def SendWalletJSONRPCCommand(method,params):
   return SendJSONRPCCommand(wallet_host,wallet_port,method,params)
 
-def SendBitmonerodJSONRPCCommand(method,params):
-  return SendJSONRPCCommand(bitmonerod_host,bitmonerod_port,method,params)
+def SendDaemonJSONRPCCommand(method,params):
+  return SendJSONRPCCommand(daemon_host,daemon_port,method,params)
 
-def SendBitmonerodHTMLCommand(method):
-  return SendHTMLCommand(bitmonerod_host,bitmonerod_port,method)
+def SendDaemonHTMLCommand(method):
+  return SendHTMLCommand(daemon_host,daemon_port,method)
 
 def GetHeight(nick,data):
   log_info('GetHeight: %s wants to know block height' % nick)
   try:
-    j = SendBitmonerodHTMLCommand("getheight")
+    j = SendDaemonHTMLCommand("getheight")
   except Exception,e:
     log_error('GetHeight: error: %s' % str(e))
     SendTo(nick,"An error has occured")

@@ -10,6 +10,7 @@
 # any later version.
 #
 
+import sys
 import socket
 import select
 import sys
@@ -21,6 +22,18 @@ import json
 import httplib
 import time
 import string
+
+try:
+  setup = sys.argv[1]
+except Exception,e:
+  print 'Usage: tipbot.py <coinname>'
+  exit(1)
+try:
+  print('Importing %s module' % setup)
+  exec "from tipbot_%s import coin_name, coin, coin_denominations, address_length, address_prefix, min_withdrawal_fee, web_wallet_url" % setup
+except Exception,e:
+  print 'Failed to load setup for %s: %s' % (setup, str(e))
+  exit(1)
 
 tipbot_name = "monero-testnet-tipbot"
 irc_network = 'irc.freenode.net'
@@ -36,16 +49,10 @@ bitmonerod_port = 28081 # 6060
 wallet_host = '127.0.0.1'
 wallet_port = 6061
 wallet_update_time = 30 # seconds
-coin=1e12
-coin_name = "Monero"
-coin_denominations = [[1000000, 1, "piconero"], [1000000000, 1e6, "micronero"], [1000000000000, 1e9, "millinero"]]
-address_length = [95, 95] # min/max size of addresses
-address_prefix = ['4', '9'] # allowed prefixes of addresses
-withdrawal_fee = 10000000000
+withdrawal_fee=min_withdrawal_fee
 min_withdraw_amount = 2*withdrawal_fee
 withdraw_disabled = False
 disable_withdraw_on_error = True
-web_wallet_url = "https://mymonero.com/" # None is there's none
 
 admins = ["moneromooo", "moneromoo"]
 

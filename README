@@ -12,6 +12,11 @@ for these in tipbot.py.
 Before starting, read the configuration parameters at the top of tipbot.py and change
 as appropriate.
 
+Start the bot with the coin name as parameter (eg, python tipbot.py monero). Coin specs
+are defined in a file called tipbot_<coin-name>.py. If you want to add a coin that the
+tipbot does not support yet, simply copy an existing spec module and adapt to that coin's
+particular specs.
+
 The tipbot will need a wallet. Any wallet can do, but it is recommended to use a separate
 wallet. This wallet should be loaded in the simplewallet the tipbot connects to.
 

@@ -97,6 +97,7 @@ def SendIRC(msg):
 
 def connect_to_irc(network,port):
   global irc
+  log_info('Connecting to IRC at %s:%u' % (network, port))
   try:
     irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
     irc.connect ( ( network, port ) )
@@ -109,6 +110,7 @@ def connect_to_irc(network,port):
   SendIRC ( 'USER %s %s %s :%s' % (tipbot_name, tipbot_name, tipbot_name, tipbot_name))
 
 def connect_to_redis(host,port):
+  log_info('Connecting to Redis at %s:%u' % (host, port))
   try:
     return redis.Redis(host=host,port=port)
   except Exception, e:

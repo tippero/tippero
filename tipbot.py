@@ -40,6 +40,7 @@ irc_network = 'irc.freenode.net'
 irc_port = 6667
 irc_homechan = '#txtptest000'
 irc_timeout_seconds = 600
+irc_send_delay = 0.4
 
 redis_host="127.0.0.1"
 redis_port=7777
@@ -92,6 +93,7 @@ def log_IRCSEND(msg):
 def SendIRC(msg):
   log_IRCSEND(msg)
   irc.send(msg + '\r\n')
+  time.sleep(irc_send_delay)
 
 def connect_to_irc(network,port):
   global irc
@@ -733,40 +735,32 @@ def DumpUsers(nick,data):
   log_info(str(userstable))
 
 def Help(nick):
-  time.sleep(0.5)
   SendTo(nick, "Help for %s:" % tipbot_name)
   SendTo(nick, "!isregistered - show whether you are currently registered with freenode")
   SendTo(nick, "!balance - show your current balance")
-  time.sleep(0.5)
   SendTo(nick, "!tip <nick> <amount> - tip another user")
   SendTo(nick, "!rain <amount> [<users>] - rain some %s on everyone (or just a few)" % coin_name)
   SendTo(nick, "!rainactive <amount> <hours> [minfrac]- rain some %s on who was active recently" % coin_name)
   SendTo(nick, "!withdraw <address> [<amount>] - withdraw part or all of your balance")
   SendTo(nick, "!info - information about the tipbot")
-  time.sleep(0.5)
   SendTo(nick, "You can send %s to your tipbot account:" % coin_name);
   SendTo(nick, "  Address: %s" % GetTipbotAddress())
   SendTo(nick, "  Payment ID: %s" % GetPaymentID(nick))
   SendTo(nick, "NO WARRANTY, YOU MAY LOSE YOUR COINS")
-  time.sleep(0.5)
   SendTo(nick, "Minimum withdrawal: %s" % AmountToString(min_withdraw_amount))
   SendTo(nick, "Withdrawal fee: %s" % AmountToString(withdrawal_fee))
   if web_wallet_url:
-    time.sleep(0.5)
     SendTo(nick, "No %s address ? You can use %s" % (coin_name, web_wallet_url))
 
 def Info(nick):
-  time.sleep(0.5)
   SendTo(nick, "Info for %s:" % tipbot_name)
   SendTo(nick, "Copyright 2014 moneromooo - http://duckpool.mooo.com/tipbot/")
   SendTo(nick, "Type !help for a list of commands")
   SendTo(nick, "NO WARRANTY, YOU MAY LOSE YOUR COINS")
-  time.sleep(0.5)
   SendTo(nick, "By sending your %s to the tipbot, you are giving up their control" % coin_name)
   SendTo(nick, "to whoever runs the tipbot. Any tip you make/receive using the tipbot")
   SendTo(nick, "is obviously not anonymous. The tipbot wallet may end up corrupt, or be")
   SendTo(nick, "stolen, the server compromised, etc. While I hope this won't be the case,")
-  time.sleep(0.5)
   SendTo(nick, "I will not offer any warranty whatsoever for the use of the tipbot or the")
   SendTo(nick, "return of any %s. Use at your own risk." % coin_name)
   SendTo(nick, "That being said, I hope you enjoy using it :)")

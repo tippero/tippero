@@ -210,7 +210,7 @@ def PerformNextAction(nick,registered):
     del calltable[nick][0]
 
 def GetPaymentID(nick):
-  salt="2u3g55bkwrui32fi3g4bGR$j5g4ugnujb";
+  salt="2u3g55bkwrui32fi3g4bGR$j5g4ugnujb-"+coin_name+"-";
   p = hashlib.sha256(salt+nick).hexdigest();
   try:
     redis.hset("paymentid",p,nick)

@@ -9,13 +9,15 @@ Installation requirements:
 The daemon needs a running redis, daemon and simplewallet. Set the connection parameters
 for these in tipbot.py.
 
-Before starting, read the configuration parameters at the top of tipbot.py and change
+Before starting, read the configuration parameters in tipbot/config.py and change
 as appropriate.
 
-Start the bot with the coin name as parameter (eg, python tipbot.py monero). Coin specs
-are defined in a file called tipbot_<coin-name>.py. If you want to add a coin that the
-tipbot does not support yet, simply copy an existing spec module and adapt to that coin's
-particular specs.
+Start the bot with the coin name as parameter to -c (eg, python tipbot.py -c monero).
+Coin specs are defined in a file called tipbot/coinspecs.py. If you want to add a coin
+that the tipbot does not support yet, simply copy and adapt an existing spec.
+
+Modules are loaded with -m (eg, python tipbot.py -m payment). Available modules are
+in the tipbot/modules directory.
 
 The tipbot will need a wallet. Any wallet can do, but it is recommended to use a separate
 wallet. This wallet should be loaded in the simplewallet the tipbot connects to.
@@ -24,7 +26,7 @@ A file called tipbot-password.txt shall be created where the tpibot runs, contai
 Freenode account password for the tipbot. This is so the tipbot can identify, to avoid
 others passing off for the tipbot.
 
-Tipbot commands are prefix with "!". Try !help to get a list of available commands.
+Tipbot commands are prefix with "!". Try !commands to get a list of available commands.
 
 The withdrawal fee is currently set to the default network fee. For coins with per kB fees,
 if a withdraw transaction happens to be larger than 1 kB, more will be charged by

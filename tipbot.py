@@ -90,7 +90,7 @@ def GetTipbotAddress():
       return ERROR
     return result["address"]
   except Exception,e:
-    log_error("GetTipbotAddress: Error retrieving tipbot address: %s" % str(e))
+    log_error("GetTipbotAddress: Error retrieving %s's address: %s" % (config.tipbot_name, str(e)))
     return "ERROR"
 
 def GetBalance(nick,chan,cmd):
@@ -178,7 +178,7 @@ def DumpUsers(nick,chan,cmd):
 def Help(nick,chan,cmd):
   SendTo(nick, "See available commands with !commands")
   if 'payment' in modulenames:
-    SendTo(nick, "You can send %s to your tipbot account:" % coinspecs.name);
+    SendTo(nick, "You can send %s to your account:" % coinspecs.name);
     SendTo(nick, "  Address: %s" % GetTipbotAddress())
     SendTo(nick, "  Payment ID: %s" % GetPaymentID(nick))
     SendTo(nick, "NO WARRANTY, YOU MAY LOSE YOUR COINS")
@@ -195,11 +195,11 @@ def Info(nick,chan,cmd):
   SendTo(nick, "Copyright 2014 moneromooo - http://duckpool.mooo.com/tipbot/")
   SendTo(nick, "Type !help for a list of commands")
   SendTo(nick, "NO WARRANTY, YOU MAY LOSE YOUR COINS")
-  SendTo(nick, "By sending your %s to the tipbot, you are giving up their control" % coinspecs.name)
-  SendTo(nick, "to whoever runs the tipbot. Any tip you make/receive using the tipbot")
-  SendTo(nick, "is obviously not anonymous. The tipbot wallet may end up corrupt, or be")
+  SendTo(nick, "By sending your %s to %s, you are giving up their control" % (coinspecs.name, config.tipbot_name))
+  SendTo(nick, "to whoever runs the tipbot. Any tip you make/receive using %s" % config.tipbot_name)
+  SendTo(nick, "is obviously not anonymous. %s's wallet may end up corrupt, or be" % config.tipbot_name)
   SendTo(nick, "stolen, the server compromised, etc. While I hope this won't be the case,")
-  SendTo(nick, "I will not offer any warranty whatsoever for the use of the tipbot or the")
+  SendTo(nick, "I will not offer any warranty whatsoever for the use of %s or the" % config.tipbot_name)
   SendTo(nick, "return of any %s. Use at your own risk." % coinspecs.name)
   SendTo(nick, "That being said, I hope you enjoy using it :)")
 

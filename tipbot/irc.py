@@ -341,7 +341,7 @@ def IRCLoop(on_idle,on_identified,on_command):
             cmd = cmd.split(' ')
             cmd[0] = cmd[0].strip(' \t\n\r')
 
-            log_log('Found command: "%s" in channel "%s"' % (str(cmd), str(chan)))
+            log_log('Found command from %s: "%s" in channel "%s"' % (who, str(cmd), str(chan)))
 
             #if cmd[0] == 'join':
             #    Join('#' + cmd[1])

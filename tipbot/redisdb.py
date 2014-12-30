@@ -34,6 +34,9 @@ def redis_get(k):
 def redis_set(k,v):
   return redisdb.set(k,v)
 
+def redis_hexists(t,k):
+  return redisdb.hexists(t,k)
+
 def redis_hget(t,k):
   return redisdb.hget(t,k)
 

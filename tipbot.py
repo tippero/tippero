@@ -11,6 +11,7 @@
 #
 
 import sys
+import os
 import socket
 import select
 import random
@@ -68,10 +69,11 @@ if not selected_coin:
   log_error('Coin setup needs to be specified with -c. See --help')
   exit(1)
 
+sys.path.append(os.path.join('tipbot','modules'))
 for modulename in modulenames:
   log_info('Importing %s module' % modulename)
   try:
-    __import__("tipbot.modules.%s" % modulename)
+    __import__(modulename)
   except Exception,e:
     log_error('Failed to load module "%s": %s' % (modulename, str(e)))
     exit(1)

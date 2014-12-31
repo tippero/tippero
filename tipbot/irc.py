@@ -15,15 +15,13 @@ import socket
 import select
 import time
 import string
+import tipbot.config as config
 from tipbot.log import log_error, log_warn, log_info, log_log, log_IRCSEND, log_IRCRECV
 
 irc_line_delay = 0
 irc = None
 irc_password = ""
 
-irc_welcome_line = 'Welcome to the freenode Internet Relay Chat Network'
-irc_homechan = '#txtptest000'
-irc_timeout_seconds = 600
 last_ping_time = time.time()
 irc_network = None
 irc_port = None
@@ -67,7 +65,7 @@ def reconnect_to_irc():
   connect_to_irc(irc_network,irc_port,irc_name,irc_password,irc_line_delay)
 
 def Send(msg):
-    SendIRC ('PRIVMSG ' + irc_homechan + ' : ' + msg)
+    SendIRC ('PRIVMSG ' + config.irc_homechan + ' : ' + msg)
 
 def SendTo(where,msg):
     SendIRC ('PRIVMSG ' + where + ' : ' + msg)
@@ -214,8 +212,8 @@ def IRCLoop(on_idle,on_identified,on_command):
     on_idle()
 
     if data == None:
-      if time.time() - last_ping_time > irc_timeout_seconds:
-        log_warn('%s seconds without PING, reconnecting in 5 seconds' % irc_timeout_seconds)
+      if time.time() - last_ping_time > config.irc_timeout_seconds:
+        log_warn('%s seconds without PING, reconnecting in 5 seconds' % config.irc_timeout_seconds)
         time.sleep(5)
         last_ping_time = time.time()
         reconnect_to_irc(irc_network,irc_port)
@@ -227,12 +225,12 @@ def IRCLoop(on_idle,on_identified,on_command):
     # consider any IRC data as a ping
     last_ping_time = time.time()
 
-    if data.find ( irc_welcome_line ) != -1:
+    if data.find ( config.irc_welcome_line ) != -1:
       userstable = dict()
       registered_users.clear()
       SendTo("nickserv", "IDENTIFY %s" % irc_password)
-      Join(irc_homechan)
-      #ScanWho(None,[irc_homechan])
+      Join(config.irc_homechan)
+      #ScanWho(None,[config.irc_homechan])
 
     if data.find ( 'PING' ) == 0:
       log_log('Got PING, replying PONG')

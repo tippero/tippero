@@ -302,6 +302,8 @@ def IRCLoop(on_idle,on_identified,on_command):
     #----------------------------- Actions -----------------------------------#
     try:
       if action == 'NOTICE':
+        if text.find ('throttled due to flooding') >= 0:
+          log_warn('Flood protection kicked in, outgoing messages lost')
         if who == "NickServ!NickServ@services.":
             #if text.find('Information on ') != -1:
             #    ns_nick = text.split(' ')[2].strip("\002")

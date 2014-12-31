@@ -209,10 +209,6 @@ def RainActive(nick,chan,cmd):
       SendTo(chan, "Nobody eligible for rain")
       return
 
-#    if units < users:
-#      SendTo(chan, "This would mean not even an atomic unit per nick")
-#      return
-
     pipe = redis_pipeline()
     pipe.hincrby("balances",nick,-units)
     rained_units = 0

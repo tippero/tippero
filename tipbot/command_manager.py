@@ -10,6 +10,7 @@
 #
 
 import tipbot.config as config
+from tipbot.utils import *
 from tipbot.irc import *
 
 commands = dict()

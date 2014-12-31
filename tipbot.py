@@ -28,7 +28,7 @@ from tipbot.log import log_error, log_warn, log_info, log_log
 from tipbot.utils import *
 from tipbot.irc import *
 from tipbot.redisdb import *
-import tipbot.command_manager
+from tipbot.command_manager import *
 
 selected_coin = None
 modulenames = []

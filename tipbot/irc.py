@@ -12,6 +12,7 @@
 
 import sys
 import socket
+import ssl
 import select
 import time
 import string
@@ -20,6 +21,7 @@ from tipbot.log import log_error, log_warn, log_info, log_log, log_IRCSEND, log_
 
 irc_line_delay = 0
 irc = None
+sslirc = None
 irc_password = ""
 irc_min_send_delay = 0.01 # seconds
 irc_max_send_delay = 5 # seconds
@@ -50,11 +52,24 @@ def SendIRC(msg):
       current_send_delay = irc_min_send_delay
 
   log_IRCSEND(msg)
-  irc.send(msg + '\r\n')
+  irc_send(msg + '\r\n')
   last_send_time = time.time()
+
+def irc_recv(size,flags=None):
+  if config.irc_use_ssl:
+    return sslirc.read(size)
+  else:
+    return irc.recv(size,flags)
+
+def irc_send(data):
+  if config.irc_use_ssl:
+    return sslirc.write(data)
+  else:
+    return irc.send(data)
 
 def connect_to_irc(network,port,name,password,delay):
   global irc
+  global sslirc
   global irc_line_delay
   global irc_network
   global irc_port
@@ -69,11 +84,20 @@ def connect_to_irc(network,port,name,password,delay):
   log_info('Connecting to IRC at %s:%u' % (network, port))
   try:
     irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
-    irc.connect ( ( network, port ) )
+    if config.irc_use_ssl:
+      try:
+        raise RuntimeError('')
+        irc_ssl_context = ssl.create_default_context()
+        sslirc = irc_ssl_context.wrap_socket(irc, network)
+        sslirc.connect ( ( network, port ) )
+      except Exception,e:
+        log_warn('Failed to create SSL context, using fallback code')
+        irc.connect ( ( network, port ) )
+        sslirc = socket.ssl(irc)
   except Exception, e:
     log_error( 'Error initializing IRC: %s' % str(e))
     exit()
-  log_IRCRECV(irc.recv ( 4096 ))
+  log_IRCRECV(irc_recv(4096))
   SendIRC ( 'PASS *********')
   SendIRC ( 'NICK %s' % name)
   SendIRC ( 'USER %s %s %s :%s' % (name, name, name, name))
@@ -180,17 +204,17 @@ def GetUsersTable():
 #    SendIRC( 'MODE ' + chan + ' -v: ' + to_dv)
 
 buffered_data = ""
-def GetIRCLine(s):
+def GetIRCLine():
   global buffered_data
   idx = buffered_data.find("\n")
   if idx == -1:
     try:
-      (r,w,x)=select.select([s.fileno()],[],[],1)
-      if s.fileno() in r:
-        newdata=s.recv(4096,socket.MSG_DONTWAIT)
+      (r,w,x)=select.select([irc.fileno()],[],[],1)
+      if irc.fileno() in r:
+        newdata=irc_recv(4096,socket.MSG_DONTWAIT)
       else:
         newdata = None
-      if s.fileno() in x:
+      if irc.fileno() in x:
         log_error('getline: IRC socket in exception set')
         newdata = None
     except Exception,e:
@@ -214,16 +238,17 @@ def GetIRCLine(s):
 def IRCLoop(on_idle,on_identified,on_command):
   global userstable
   global registered_users
+  global last_ping_time
 
   while True:
     action = None
     try:
-      data = GetIRCLine(irc)
+      data = GetIRCLine()
     except Exception,e:
-      log_warn('Exception fron GetIRCLine, we were probably disconnected, reconnecting in 5 seconds')
+      log_warn('Exception from GetIRCLine, we were probably disconnected, reconnecting in 5 seconds')
       time.sleep(5)
       last_ping_time = time.time()
-      reconnect_to_irc(irc_network,irc_port)
+      reconnect_to_irc()
       continue
 
     # All that must be done even when nothing from IRC - data may be None here
@@ -234,7 +259,7 @@ def IRCLoop(on_idle,on_identified,on_command):
         log_warn('%s seconds without PING, reconnecting in 5 seconds' % config.irc_timeout_seconds)
         time.sleep(5)
         last_ping_time = time.time()
-        reconnect_to_irc(irc_network,irc_port)
+        reconnect_to_irc()
       continue
 
     data = data.strip("\r\n")
@@ -260,7 +285,7 @@ def IRCLoop(on_idle,on_identified,on_command):
       log_warn('We were kicked from IRC, reconnecting in 5 seconds')
       time.sleep(5)
       last_ping_time = time.time()
-      reconnect_to_irc(irc_network,irc_port)
+      reconnect_to_irc()
       continue
 
     #--------------------------- Action check --------------------------------#

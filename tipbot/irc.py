@@ -423,6 +423,17 @@ def IRCLoop(on_idle,on_identified,on_command):
             del userstable[chan][nick]
             log_log("New list of users in %s: %s" % (chan, str(userstable[chan].keys())))
 
+      elif action == 'KICK':
+        nick = parts[3]
+        log_info('%s was kicked' % nick)
+        removed_list = ""
+        for chan in userstable:
+          log_log("Checking in %s" % chan)
+          if nick in userstable[chan]:
+            removed_list = removed_list + " " + chan
+            del userstable[chan][nick]
+            log_log("New list of users in %s: %s" % (chan, str(userstable[chan].keys())))
+
       elif action == 'NICK':
         nick = GetNick(who)
         new_nick = text

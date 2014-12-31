@@ -59,15 +59,34 @@ def Commands(nick,chan,cmd):
     all = True
   else:
     all = False
+
+  module_name = GetParam(cmd,1)
+
   SendTo(nick, "Commands for %s:" % config.tipbot_name)
+
+  msgs = dict()
   for command_name in commands:
     c = commands[command_name]
     if 'admin' in c and c['admin'] and not all:
       continue
-    synopsis = c['name']
-    if 'parms' in c:
-      synopsis = synopsis + " " + c['parms']
-    SendTo(nick, "%s - %s" % (synopsis, c['help']))
+    module = c['module']
+    if module_name:
+      if module_name != module:
+        continue
+      synopsis = c['name']
+      if 'parms' in c:
+        synopsis = synopsis + " " + c['parms']
+      SendTo(nick, "%s - %s" % (synopsis, c['help']))
+    else:
+      if module in msgs:
+        msgs[module] = msgs[module] +(", ")
+      else:
+        msgs[module] = module + " module: "
+      msgs[module] = msgs[module] +(c['name'])
+
+  if not module_name:
+    for msg in msgs:
+      SendTo(nick, "%s" % msgs[msg])
 
 def RegisterCommand(command):
   commands[command['name']] = command

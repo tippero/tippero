@@ -147,6 +147,7 @@ def Withdraw(nick,chan,cmd):
 
 
 RegisterCommand({
+  'module': 'withdraw',
   'name': 'withdraw',
   'parms': '<address> [<amount>]',
   'function': Withdraw,
@@ -154,12 +155,14 @@ RegisterCommand({
   'help': "withdraw part or all of your balance"
 })
 RegisterCommand({
+  'module': 'withdraw',
   'name': 'enable_withdraw',
   'function': EnableWithdraw,
   'admin': True,
   'help': "Enable withdrawals"
 })
 RegisterCommand({
+  'module': 'withdraw',
   'name': 'disable_withdraw',
   'function': DisableWithdraw,
   'admin': True,

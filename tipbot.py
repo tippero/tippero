@@ -178,7 +178,7 @@ def DumpUsers(nick,chan,cmd):
   log_info(str(userstable))
 
 def Help(nick,chan,cmd):
-  SendTo(nick, "See available commands with !commands")
+  SendTo(nick, "See available commands with !commands or !commands <modulename>")
   if 'payment' in modulenames:
     SendTo(nick, "You can send %s to your account:" % coinspecs.name);
     SendTo(nick, "  Address: %s" % GetTipbotAddress())
@@ -237,18 +237,18 @@ def OnIdentified(nick, identified):
   RunNextCommand(nick, identified)
 
 def RegisterCommands():
-  RegisterCommand({'name': 'help', 'function': Help, 'help': "Displays help about %s" % config.tipbot_name})
-  RegisterCommand({'name': 'commands', 'function': Commands, 'help': "Displays list of commands"})
-  RegisterCommand({'name': 'isregistered', 'function': IsRegistered, 'help': "show whether you are currently registered with freenode"})
-  RegisterCommand({'name': 'balance', 'function': GetBalance, 'registered': True, 'help': "show your current balance"})
-  RegisterCommand({'name': 'info', 'function': Info, 'help': "infornmation about %s" % config.tipbot_name})
+  RegisterCommand({'module': 'builtin', 'name': 'help', 'function': Help, 'help': "Displays help about %s" % config.tipbot_name})
+  RegisterCommand({'module': 'builtin', 'name': 'commands', 'parms': '[module]', 'function': Commands, 'help': "Displays list of commands"})
+  RegisterCommand({'module': 'builtin', 'name': 'isregistered', 'function': IsRegistered, 'help': "show whether you are currently registered with freenode"})
+  RegisterCommand({'module': 'builtin', 'name': 'balance', 'function': GetBalance, 'registered': True, 'help': "show your current balance"})
+  RegisterCommand({'module': 'builtin', 'name': 'info', 'function': Info, 'help': "infornmation about %s" % config.tipbot_name})
 
-  RegisterCommand({'name': 'height', 'function': GetHeight, 'admin': True, 'help': "Get current blockchain height"})
-  RegisterCommand({'name': 'tipbot_balance', 'function': GetTipbotBalance, 'admin': True, 'help': "Get current blockchain height"})
-  RegisterCommand({'name': 'addbalance', 'function': AddBalance, 'admin': True, 'help': "Add balance to your account"})
-  RegisterCommand({'name': 'scanwho', 'function': ScanWho, 'admin': True, 'help': "Refresh users list in a channel"})
-  RegisterCommand({'name': 'dump_users', 'function': DumpUsers, 'admin': True, 'help': "Dump users table to log"})
-  RegisterCommand({'name': 'show_activity', 'function': ShowActivity, 'admin': True, 'help': "Show time since a user was last active"})
+  RegisterCommand({'module': 'builtin', 'name': 'height', 'function': GetHeight, 'admin': True, 'help': "Get current blockchain height"})
+  RegisterCommand({'module': 'builtin', 'name': 'tipbot_balance', 'function': GetTipbotBalance, 'admin': True, 'help': "Get current blockchain height"})
+  RegisterCommand({'module': 'builtin', 'name': 'addbalance', 'function': AddBalance, 'admin': True, 'help': "Add balance to your account"})
+  RegisterCommand({'module': 'builtin', 'name': 'scanwho', 'function': ScanWho, 'admin': True, 'help': "Refresh users list in a channel"})
+  RegisterCommand({'module': 'builtin', 'name': 'dump_users', 'function': DumpUsers, 'admin': True, 'help': "Dump users table to log"})
+  RegisterCommand({'module': 'builtin', 'name': 'show_activity', 'function': ShowActivity, 'admin': True, 'help': "Show time since a user was last active"})
 
 def OnCommandProxy(cmd,chan,who):
   OnCommand(cmd,chan,who,RunAdminCommand,RunRegisteredCommand)

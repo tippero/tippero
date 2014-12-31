@@ -21,8 +21,12 @@ from tipbot.log import log_error, log_warn, log_info, log_log, log_IRCSEND, log_
 irc_line_delay = 0
 irc = None
 irc_password = ""
+irc_min_send_delay = 0.01 # seconds
+irc_max_send_delay = 5 # seconds
 
 last_ping_time = time.time()
+last_send_time = 0
+current_send_delay = irc_min_send_delay
 irc_network = None
 irc_port = None
 irc_name = None
@@ -31,9 +35,23 @@ userstable=dict()
 registered_users=set()
 
 def SendIRC(msg):
+  global last_send_time, current_send_delay
+
+  t = time.time()
+  dt = t - last_send_time
+  if dt < current_send_delay:
+    time.sleep (current_send_delay - dt)
+    current_send_delay = current_send_delay * 1.5
+    if current_send_delay > irc_max_send_delay:
+      current_send_delay = irc_max_send_delay
+  else:
+    current_send_delay = current_send_delay / 1.5
+    if current_send_delay < irc_min_send_delay:
+      current_send_delay = irc_min_send_delay
+
   log_IRCSEND(msg)
   irc.send(msg + '\r\n')
-  time.sleep(irc_line_delay)
+  last_send_time = time.time()
 
 def connect_to_irc(network,port,name,password,delay):
   global irc

@@ -16,7 +16,7 @@ irc_network = 'irc.freenode.net'
 irc_port = 6697
 irc_send_delay = 0.4
 irc_welcome_line = 'Welcome to the freenode Internet Relay Chat Network'
-irc_homechan = '#txtptest000'
+irc_channels = ['#txtptest000']
 irc_timeout_seconds = 600
 irc_use_ssl = True
 

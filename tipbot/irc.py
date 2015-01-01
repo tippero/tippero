@@ -106,9 +106,6 @@ def connect_to_irc(network,port,name,password,delay):
 def reconnect_to_irc():
   connect_to_irc(irc_network,irc_port,irc_name,irc_password,irc_line_delay)
 
-def Send(msg):
-    SendIRC ('PRIVMSG ' + config.irc_homechan + ' : ' + msg)
-
 def SendTo(where,msg):
     SendIRC ('PRIVMSG ' + where + ' : ' + msg)
 
@@ -272,8 +269,9 @@ def IRCLoop(on_idle,on_identified,on_command):
       userstable = dict()
       registered_users.clear()
       SendTo("nickserv", "IDENTIFY %s" % irc_password)
-      Join(config.irc_homechan)
-      #ScanWho(None,[config.irc_homechan])
+      for chan in config.irc_channels:
+        Join(chan)
+        #ScanWho(None,[chan])
 
     if data.find ( 'PING' ) == 0:
       log_log('Got PING, replying PONG')

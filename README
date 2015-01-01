@@ -22,7 +22,7 @@ in the tipbot/modules directory.
 The tipbot will need a wallet. Any wallet can do, but it is recommended to use a separate
 wallet. This wallet should be loaded in the simplewallet the tipbot connects to.
 
-A file called tipbot-password.txt shall be created where the tpibot runs, containing the
+A file called tipbot-password.txt shall be created where the tipbot runs, containing the
 Freenode account password for the tipbot. This is so the tipbot can identify, to avoid
 others passing off for the tipbot.
 

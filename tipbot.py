@@ -230,6 +230,25 @@ def SendToNick(nick,chan,msg):
 def IsRegistered(nick,chan,cmd):
   RunRegisteredCommand(nick,chan,SendToNick,"You are registered",SendToNick,"You are not registered")
 
+def Reload(nick,chan,cmd):
+  sendto=GetSendTo(nick,chan)
+  modulename=GetParam(cmd,1)
+  if not modulename:
+    SendTo(sendto,"Usage: reload <modulename>")
+    return
+  if modulename=="builtin":
+    SendTo(sendto,"Cannot reload builtin module")
+    return
+  log_info('Unloading %s module' % modulename)
+  UnregisterCommands(modulename)
+  log_info('Reloading %s module' % modulename)
+  try:
+    reload(sys.modules[modulename])
+    SendTo(sendto,'%s reloaded' % modulename)
+  except Exception,e:
+    log_error('Failed to load module "%s": %s' % (modulename, str(e)))
+    SendTo(sendto,'An error occured')
+
 def OnIdle():
   RunIdleFunctions([irc,redisdb])
 
@@ -249,6 +268,7 @@ def RegisterCommands():
   RegisterCommand({'module': 'builtin', 'name': 'scanwho', 'function': ScanWho, 'admin': True, 'help': "Refresh users list in a channel"})
   RegisterCommand({'module': 'builtin', 'name': 'dump_users', 'function': DumpUsers, 'admin': True, 'help': "Dump users table to log"})
   RegisterCommand({'module': 'builtin', 'name': 'show_activity', 'function': ShowActivity, 'admin': True, 'help': "Show time since a user was last active"})
+  RegisterCommand({'module': 'builtin', 'name': 'reload', 'function': Reload, 'admin': True, 'help': "Reload a module"})
 
 def OnCommandProxy(cmd,chan,who):
   OnCommand(cmd,chan,who,RunAdminCommand,RunRegisteredCommand)

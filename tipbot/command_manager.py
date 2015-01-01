@@ -16,6 +16,7 @@ from tipbot.irc import *
 commands = dict()
 calltable=dict()
 idles = []
+cleanup = dict()
 
 def RunRegisteredCommand(nick,chan,ifyes,yesdata,ifno,nodata):
   if nick not in calltable:
@@ -91,8 +92,11 @@ def Commands(nick,chan,cmd):
 def RegisterCommand(command):
   commands[command['name']] = command
 
-def RegisterIdleFunction(function):
-  idles.append(function)
+def RegisterIdleFunction(module,function):
+  idles.append((module,function))
+
+def RegisterCleanupFunction(module,function):
+  cleanup.append((module,function))
 
 def OnCommand(cmd,chan,who,check_admin,check_registered):
   if cmd[0] in commands:
@@ -109,8 +113,28 @@ def OnCommand(cmd,chan,who,check_admin,check_registered):
 def RunIdleFunctions(param):
   for f in idles:
     try:
-      f(param)
+      f[1](param)
     except Exception,e:
-      log_error("Exception running idle function %s: %s" % (str(f),str(e)))
+      log_error("Exception running idle function %s from module %s: %s" % (str(f[1]),str(f[2]),str(e)))
 
+def UnregisterCommands(module):
+  global commands
+  global idles
+
+  if module in cleanup:
+    cleanup[module]()
+    del cleanup[module]
+
+  new_idles = []
+  for f in idles:
+    if f[0] != module:
+      new_idles.append(f)
+  idles = new_idles
+
+  new_commands = dict()
+  for cmd in commands:
+    c = commands[cmd]
+    if c['module'] != module:
+      new_commands[cmd] = c
+  commands = new_commands
 

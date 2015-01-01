@@ -243,7 +243,7 @@ def RainActive(nick,chan,cmd):
 
 
 RegisterCommand({
-  'module': 'tipping',
+  'module': __name__,
   'name': 'tip',
   'parms': '<nick> <amount>',
   'function': Tip,
@@ -251,7 +251,7 @@ RegisterCommand({
   'help': "tip another user"
 })
 RegisterCommand({
-  'module': 'tipping',
+  'module': __name__,
   'name': 'rain',
   'parms': '<amount> [<users>]',
   'function': Rain,
@@ -259,7 +259,7 @@ RegisterCommand({
   'help': "rain some coins on everyone (or just a few)"
 })
 RegisterCommand({
-  'module': 'tipping',
+  'module': __name__,
   'name': 'rainactive',
   'parms': '<amount> [<hours>]',
   'function': RainActive,

@@ -89,5 +89,5 @@ def UpdateCoin(param):
     log_error('UpdateCoin: Failed to get bulk payments: %s' % str(e))
   last_wallet_update_time = time.time()
 
-RegisterIdleFunction("payment",UpdateCoin)
+RegisterIdleFunction(__name__,UpdateCoin)
 

@@ -23,7 +23,7 @@ irc_line_delay = 0
 irc = None
 sslirc = None
 irc_password = ""
-irc_min_send_delay = 0.01 # seconds
+irc_min_send_delay = 0.05 # seconds
 irc_max_send_delay = 5 # seconds
 
 last_ping_time = time.time()
@@ -48,9 +48,12 @@ def SendIRC(msg):
     if current_send_delay > irc_max_send_delay:
       current_send_delay = irc_max_send_delay
   else:
-    current_send_delay = current_send_delay / 1.5
-    if current_send_delay < irc_min_send_delay:
-      current_send_delay = irc_min_send_delay
+    while dt > current_send_delay * 1.5:
+      dt = dt - current_send_delay
+      current_send_delay = current_send_delay / 1.5
+      if current_send_delay < irc_min_send_delay:
+        current_send_delay = irc_min_send_delay
+        break
 
   log_IRCSEND(msg)
   irc_send(msg + '\r\n')

@@ -39,6 +39,11 @@ def PartChannel(nick,chan,cmd):
     pchan = chan
   Part(pchan)
 
+def QuitIRC(nick,chan,cmd):
+  msg = ""
+  for w in cmd[:1]:
+    msg = msg + " " + w
+  Quit(msg)
 
 RegisterCommand({
   'module': __name__,
@@ -55,4 +60,11 @@ RegisterCommand({
   'function': PartChannel,
   'admin': True,
   'help': "Makes %s part from a channel" % (config.tipbot_name)
+})
+RegisterCommand({
+  'module': __name__,
+  'name': 'quit',
+  'function': QuitIRC,
+  'admin': True,
+  'help': "Makes %s quit IRC" % (config.tipbot_name)
 })

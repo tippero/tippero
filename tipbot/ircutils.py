@@ -32,6 +32,7 @@ current_send_delay = irc_min_send_delay
 irc_network = None
 irc_port = None
 irc_name = None
+irc_quitting = False
 
 userstable=dict()
 registered_users=set()
@@ -114,6 +115,11 @@ def Join(chan):
 
 def Part(chan):
     SendIRC ( 'PART ' + chan)
+
+def Quit(msg):
+    global irc_quitting
+    irc_quitting = True
+    SendIRC ( 'QUIT%s' % msg)
 
 def Who(chan):
     userstable[chan] = dict()
@@ -280,6 +286,9 @@ def IRCLoop(on_idle,on_identified,on_command):
       continue
 
     if data.find('ERROR :Closing Link:') == 0:
+      if irc_quitting:
+        log_info('IRC stopped, bye')
+        break
       log_warn('We were kicked from IRC, reconnecting in 5 seconds')
       time.sleep(5)
       last_ping_time = time.time()

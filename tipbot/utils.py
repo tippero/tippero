@@ -68,7 +68,6 @@ def AmountToString(amount):
         break
   if not samount:
       samount = "%.16g %s" % (float(lamount) / coinspecs.atomic_units, coinspecs.name)
-  log_log("AmountToString: %s -> %s" % (str(amount),samount))
   return samount
 
 def SendJSONRPCCommand(host,port,method,params):

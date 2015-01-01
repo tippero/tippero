@@ -80,21 +80,6 @@ for modulename in modulenames:
 
 
 
-def GetTipbotAddress():
-  try:
-    j = SendWalletJSONRPCCommand("getaddress",None)
-    if not "result" in j:
-      log_error('GetTipbotAddress: No result found in getaddress reply')
-      return ERROR
-    result = j["result"]
-    if not "address" in result:
-      log_error('GetTipbotAddress: No address found in getaddress reply')
-      return ERROR
-    return result["address"]
-  except Exception,e:
-    log_error("GetTipbotAddress: Error retrieving %s's address: %s" % (config.tipbot_name, str(e)))
-    return "ERROR"
-
 def GetBalance(nick,chan,cmd):
   sendto=GetSendTo(nick,chan)
   log_log("GetBalance: checking %s" % nick)
@@ -179,16 +164,7 @@ def DumpUsers(nick,chan,cmd):
 
 def Help(nick,chan,cmd):
   SendTo(nick, "See available commands with !commands or !commands <modulename>")
-  if 'payment' in modulenames:
-    SendTo(nick, "You can send %s to your account:" % coinspecs.name);
-    SendTo(nick, "  Address: %s" % GetTipbotAddress())
-    SendTo(nick, "  Payment ID: %s" % GetPaymentID(nick))
-    SendTo(nick, "NO WARRANTY, YOU MAY LOSE YOUR COINS")
-  if 'withdraw' in modulenames:
-    fee = config.withdrawal_fee or coinspecs.min_withdrawal_fee
-    min_amount = config.min_withdraw_amount or fee
-    SendTo(nick, "Minimum withdrawal: %s" % AmountToString(min_amount))
-    SendTo(nick, "Withdrawal fee: %s" % AmountToString(fee))
+  RunHelpFunctions(nick)
   if coinspecs.web_wallet_url:
     SendTo(nick, "No %s address ? You can use %s" % (coinspecs.name, coinspecs.web_wallet_url))
 

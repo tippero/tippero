@@ -144,6 +144,12 @@ def Withdraw(nick,chan,cmd):
     log_error('Withdraw: FAILED TO SUBTRACT BALANCE: exception: %s' % str(e))
     CheckDisableWithdraw()
 
+def Help(nick):
+  fee = config.withdrawal_fee or coinspecs.min_withdrawal_fee
+  min_amount = config.min_withdraw_amount or fee
+  SendTo(nick, "Minimum withdrawal: %s" % AmountToString(min_amount))
+  SendTo(nick, "Withdrawal fee: %s" % AmountToString(fee))
+
 
 
 RegisterCommand({
@@ -168,3 +174,4 @@ RegisterCommand({
   'admin': True,
   'help': "Disable withdrawals"
 })
+RegisterHelpFunction(__name__,Help)

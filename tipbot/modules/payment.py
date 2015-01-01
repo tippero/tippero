@@ -20,6 +20,21 @@ from tipbot.command_manager import *
 
 last_wallet_update_time = None
 
+def GetTipbotAddress():
+  try:
+    j = SendWalletJSONRPCCommand("getaddress",None)
+    if not "result" in j:
+      log_error('GetTipbotAddress: No result found in getaddress reply')
+      return ERROR
+    result = j["result"]
+    if not "address" in result:
+      log_error('GetTipbotAddress: No address found in getaddress reply')
+      return ERROR
+    return result["address"]
+  except Exception,e:
+    log_error("GetTipbotAddress: Error retrieving %s's address: %s" % (config.tipbot_name, str(e)))
+    return "ERROR"
+
 def UpdateCoin(param):
   irc = param[0]
   redisdb = param[1]
@@ -89,5 +104,11 @@ def UpdateCoin(param):
     log_error('UpdateCoin: Failed to get bulk payments: %s' % str(e))
   last_wallet_update_time = time.time()
 
+def Help(nick):
+  SendTo(nick, "You can send %s to your account:" % coinspecs.name);
+  SendTo(nick, "  Address: %s" % GetTipbotAddress())
+  SendTo(nick, "  Payment ID: %s" % GetPaymentID(nick))
+
 RegisterIdleFunction(__name__,UpdateCoin)
+RegisterHelpFunction(__name__,Help)
 

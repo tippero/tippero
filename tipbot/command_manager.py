@@ -17,6 +17,7 @@ commands = dict()
 calltable=dict()
 idles = []
 cleanup = dict()
+helps = dict()
 
 def RunRegisteredCommand(nick,chan,ifyes,yesdata,ifno,nodata):
   if nick not in calltable:
@@ -101,6 +102,9 @@ def RegisterIdleFunction(module,function):
 def RegisterCleanupFunction(module,function):
   cleanup.append((module,function))
 
+def RegisterHelpFunction(module,function):
+  helps[module]=function
+
 def OnCommand(cmd,chan,who,check_admin,check_registered):
   if cmd[0] in commands:
     c = commands[cmd[0]]
@@ -120,9 +124,17 @@ def RunIdleFunctions(param):
     except Exception,e:
       log_error("Exception running idle function %s from module %s: %s" % (str(f[1]),str(f[2]),str(e)))
 
+def RunHelpFunctions(param):
+  for f in helps:
+    try:
+      helps[f](param)
+    except Exception,e:
+      log_error("Exception running help function %s from module %s: %s" % (str(helps[f]),str(f),str(e)))
+
 def UnregisterCommands(module):
   global commands
   global idles
+  global helps
 
   if module in cleanup:
     cleanup[module]()
@@ -133,6 +145,9 @@ def UnregisterCommands(module):
     if f[0] != module:
       new_idles.append(f)
   idles = new_idles
+
+  if module in helps:
+    del helps[module]
 
   new_commands = dict()
   for cmd in commands:

@@ -63,7 +63,10 @@ def Commands(nick,chan,cmd):
 
   module_name = GetParam(cmd,1)
 
-  SendTo(nick, "Commands for %s:" % config.tipbot_name)
+  if module_name:
+    SendTo(nick, "Commands for %s's %s module:" % (config.tipbot_name,module_name))
+  else:
+    SendTo(nick, "Commands for %s (!commands <modulename> for command help):" % config.tipbot_name)
 
   msgs = dict()
   for command_name in commands:

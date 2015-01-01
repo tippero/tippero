@@ -1,7 +1,7 @@
 #!/bin/python
 #
 # Cryptonote tipbot - commands
-# Copyright 2014 moneromooo
+# Copyright 2014,2015 moneromooo
 #
 # The Cryptonote tipbot is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
@@ -94,6 +94,8 @@ def Commands(nick,chan,cmd):
       SendTo(nick, "%s" % msgs[msg])
 
 def RegisterCommand(command):
+  if command['name'] in commands:
+    log_warn('module %s redefined function %s from module %s' % (command['module'],command['name'],commands[command['name']]['module']))
   commands[command['name']] = command
 
 def RegisterIdleFunction(module,function):

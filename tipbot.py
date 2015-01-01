@@ -1,7 +1,7 @@
 #!/bin/python
 #
 # Cryptonote tipbot
-# Copyright 2014 moneromooo
+# Copyright 2014,2015 moneromooo
 # Inspired by "Simple Python IRC bot" by berend
 #
 # The Cryptonote tipbot is free software; you can redistribute it and/or
@@ -125,32 +125,11 @@ def GetHeight(nick,chan,cmd):
 def GetTipbotBalance(nick,chan,cmd):
   log_info('%s wants to know the tipbot balance' % nick)
   try:
-    j = SendWalletJSONRPCCommand("getbalance",None)
+    balance, unlocked_balance = RetrieveTipbotBalance()
   except Exception,e:
     SendTo(nick,"An error has occured")
     return
-  if not "result" in j:
-    log_error('GetTipbotBalance: result not found in reply')
-    SendTo(nick, "An error has occured")
-    return
-  result = j["result"]
-  if not "balance" in result:
-    log_error('GetTipbotBalance: balance not found in result')
-    SendTo(nick, "An error has occured")
-    return
-  if not "unlocked_balance" in result:
-    log_error('GetTipbotBalance: unlocked_balance not found in result')
-    SendTo(nick, "An error has occured")
-    return
-  balance = result["balance"]
-  unlocked_balance = result["unlocked_balance"]
-  log_log('GetTipbotBalance: balance: %s' % str(balance))
-  log_log('GetTipbotBalance: unlocked_balance: %s' % str(unlocked_balance))
   pending = long(balance)-long(unlocked_balance)
-  if pending < 0:
-    log_error('GetTipbotBalance: Negative pending balance! balance %s, unlocked %s' % (str(balance),str(unlocked)))
-    SendTo(nick, "An error has occured")
-    return
   if pending == 0:
     log_info("GetTipbotBalance: Tipbot balance: %s" % AmountToString(balance))
     SendTo(nick,"Tipbot balance: %s" % AmountToString(balance))

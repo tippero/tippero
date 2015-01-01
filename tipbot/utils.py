@@ -1,7 +1,7 @@
 #!/bin/python
 #
 # Cryptonote tipbot - utility functions
-# Copyright 2014 moneromooo
+# Copyright 2014,2015 moneromooo
 #
 # The Cryptonote tipbot is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
@@ -146,4 +146,44 @@ def SendDaemonJSONRPCCommand(method,params):
 
 def SendDaemonHTMLCommand(method):
   return SendHTMLCommand(config.daemon_host,config.daemon_port,method)
+
+def RetrieveTipbotBalance():
+  j = SendWalletJSONRPCCommand("getbalance",None)
+  if not "result" in j:
+    log_error('RetrieveTipbotBalance: result not found in reply')
+    raise RuntimeError("")
+    return
+  result = j["result"]
+  if not "balance" in result:
+    log_error('RetrieveTipbotBalance: balance not found in result')
+    raise RuntimeError("")
+    return
+  if not "unlocked_balance" in result:
+    log_error('RetrieveTipbotBalance: unlocked_balance not found in result')
+    raise RuntimeError("")
+    return
+  balance = result["balance"]
+  unlocked_balance = result["unlocked_balance"]
+  log_log('RetrieveTipbotBalance: balance: %s' % str(balance))
+  log_log('RetrieveTipbotBalance: unlocked_balance: %s' % str(unlocked_balance))
+  pending = long(balance)-long(unlocked_balance)
+  if pending < 0:
+    log_error('RetrieveTipbotBalance: Negative pending balance! balance %s, unlocked %s' % (str(balance),str(unlocked_balance)))
+    raise RuntimeError("")
+    return
+  return balance, unlocked_balance
+
+def RetrieveHouseBalance():
+  balance, unlocked_balance = RetrieveTipbotBalance()
+
+  nicks = redis_hgetall("balances")
+  for nick in nicks:
+    nb = redis_hget("balances", nick)
+    unlocked_balance = unlocked_balance - long(nb)
+    log_log('RetrieveHouseBalance: subtracting %s from %s to give %s' % (AmountToString(nb), nick, AmountToString(unlocked_balance)))
+
+  if unlocked_balance < 0:
+    raise RuntimeError('Negative house balance')
+    return
+  return unlocked_balance
 

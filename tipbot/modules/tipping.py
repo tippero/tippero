@@ -163,6 +163,7 @@ def RainActive(nick,chan,cmd):
     hours=float(hours)
     if hours <= 0:
       raise RuntimeError("")
+    seconds = hours * 3600
   except Exception,e:
     SendTo(chan, "Invalid hours")
     return
@@ -200,8 +201,8 @@ def RainActive(nick,chan,cmd):
       if t == None:
         continue
       dt = now - t
-      if dt <= hours * 3600:
-        w = (1 * (hours * 3600 - dt) + minfrac * (1 - (hours * 3600 - dt))) / (hours * 3600)
+      if dt <= seconds:
+        w = (1 * (seconds - dt) + minfrac * dt) / (seconds)
         weights[n] = w
         weight += w
 

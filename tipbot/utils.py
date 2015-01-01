@@ -16,7 +16,7 @@ import httplib
 import tipbot.config as config
 import tipbot.coinspecs as coinspecs
 from tipbot.log import log_error, log_warn, log_info, log_log
-from tipbot.irc import *
+from tipbot.ircutils import *
 from tipbot.redisdb import *
 
 

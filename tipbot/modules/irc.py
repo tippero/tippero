@@ -14,7 +14,7 @@ import string
 import tipbot.config as config
 from tipbot.log import log_error, log_warn, log_info, log_log
 from tipbot.utils import *
-from tipbot.irc import *
+from tipbot.ircutils import *
 from tipbot.command_manager import *
 
 def JoinChannel(nick,chan,cmd):
@@ -41,7 +41,7 @@ def PartChannel(nick,chan,cmd):
 
 def QuitIRC(nick,chan,cmd):
   msg = ""
-  for w in cmd[:1]:
+  for w in cmd[1:]:
     msg = msg + " " + w
   Quit(msg)
 

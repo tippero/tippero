@@ -26,7 +26,7 @@ import tipbot.coinspecs as coinspecs
 import tipbot.config as config
 from tipbot.log import log_error, log_warn, log_info, log_log
 from tipbot.utils import *
-from tipbot.irc import *
+from tipbot.ircutils import *
 from tipbot.redisdb import *
 from tipbot.command_manager import *
 

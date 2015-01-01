@@ -11,7 +11,7 @@
 
 import tipbot.config as config
 from tipbot.utils import *
-from tipbot.irc import *
+from tipbot.ircutils import *
 
 commands = dict()
 calltable=dict()

@@ -13,11 +13,11 @@ import tipbot.config as config
 from tipbot.utils import *
 from tipbot.ircutils import *
 
+modules = dict()
 commands = dict()
 calltable=dict()
 idles = []
 cleanup = dict()
-helps = dict()
 
 def RunRegisteredCommand(nick,chan,ifyes,yesdata,ifno,nodata):
   if nick not in calltable:
@@ -71,32 +71,40 @@ def Commands(nick,chan,cmd):
 
   msgs = dict()
   for command_name in commands:
-    c = commands[command_name]
-    if 'admin' in c and c['admin'] and not all:
-      continue
-    module = c['module']
-    if module_name:
-      if module_name != module:
+    for c in commands[command_name]:
+      if 'admin' in c and c['admin'] and not all:
         continue
-      synopsis = c['name']
-      if 'parms' in c:
-        synopsis = synopsis + " " + c['parms']
-      SendTo(nick, "%s - %s" % (synopsis, c['help']))
-    else:
-      if module in msgs:
-        msgs[module] = msgs[module] +(", ")
+      module = c['module']
+      if module_name:
+        if module_name != module:
+          continue
+        synopsis = c['name']
+        if 'parms' in c:
+          synopsis = synopsis + " " + c['parms']
+        SendTo(nick, "%s - %s" % (synopsis, c['help']))
       else:
-        msgs[module] = module + " module: "
-      msgs[module] = msgs[module] +(c['name'])
+        if module in msgs:
+          msgs[module] = msgs[module] +(", ")
+        else:
+          msgs[module] = module + " module: "
+        msgs[module] = msgs[module] +(c['name'])
 
   if not module_name:
     for msg in msgs:
       SendTo(nick, "%s" % msgs[msg])
 
+def RegisterModule(module):
+  if module['name'] in modules:
+    log_error('a module named %s is already registered' % module['name'])
+    return
+  modules[module['name']] = module
+
 def RegisterCommand(command):
   if command['name'] in commands:
-    log_warn('module %s redefined function %s from module %s' % (command['module'],command['name'],commands[command['name']]['module']))
-  commands[command['name']] = command
+    log_warn('module %s redefined function %s from module %s' % (command['module'],command['name'],commands[command['name']][0]['module']))
+  else:
+    commands[command['name']] = []
+  commands[command['name']].append(command)
 
 def RegisterIdleFunction(module,function):
   idles.append((module,function))
@@ -104,12 +112,40 @@ def RegisterIdleFunction(module,function):
 def RegisterCleanupFunction(module,function):
   cleanup.append((module,function))
 
-def RegisterHelpFunction(module,function):
-  helps[module]=function
-
 def OnCommand(cmd,chan,who,check_admin,check_registered):
-  if cmd[0] in commands:
-    c = commands[cmd[0]]
+  cmdparts = cmd[0].split(':')
+  log_log('cmdparts: %s' % str(cmdparts))
+  if len(cmdparts) == 2:
+    modulename = cmdparts[0]
+    cmdname = cmdparts[1]
+  elif len(cmdparts) == 1:
+    modulename = None
+    cmdname = cmdparts[0]
+  else:
+    SendTo(GetNick(who), "Invalid command, try !help")
+    return
+  log_log('modulename: %s, cmdname: %s' % (str(modulename),str(cmdname)))
+  if cmdname in commands:
+    log_log('%s found in commands' % (str(cmd[0])))
+    if len(commands[cmdname]) > 1:
+      if not modulename:
+        msg = ""
+        for c in commands[cmdname]:
+          if msg != "":
+            msg = msg + ", "
+          msg = msg + c['module'] + ":" + cmd[0]
+        SendTo(GetNick(who), "Ambiguous command, try one of: %s" % msg)
+        return
+      c = None
+      for command in commands[cmdname]:
+        if command['module'] == modulename:
+          c = command
+          break
+      if not c:
+        SendTo(GetNick(who), "Invalid command, try !help")
+        return
+    else:
+      c = commands[cmdname][0]
     if 'admin' in c and c['admin']:
       check_admin(GetNick(who),chan,c['function'],cmd,SendTo,"You must be admin")
     elif 'registered' in c and c['registered']:
@@ -126,21 +162,25 @@ def RunIdleFunctions(param):
     except Exception,e:
       log_error("Exception running idle function %s from module %s: %s" % (str(f[1]),str(f[2]),str(e)))
 
-def RunHelpFunctions(param):
-  for f in helps:
+def RunModuleHelpFunction(module,nick,chan):
+  if module in modules:
     try:
-      helps[f](param)
+      modules[module]['help'](nick,chan)
     except Exception,e:
-      log_error("Exception running help function %s from module %s: %s" % (str(helps[f]),str(f),str(e)))
+      log_error("Exception running help function %s from module %s: %s" % (str(modules[module]['help']),str(module),str(e)))
+  else:
+    SendTo(nick,'No help found for module %s' % module)
 
-def UnregisterCommands(module):
+def UnregisterModule(module):
   global commands
   global idles
-  global helps
 
   if module in cleanup:
     cleanup[module]()
     del cleanup[module]
+
+  if module in modules:
+    del modules[module]
 
   new_idles = []
   for f in idles:
@@ -148,13 +188,13 @@ def UnregisterCommands(module):
       new_idles.append(f)
   idles = new_idles
 
-  if module in helps:
-    del helps[module]
-
   new_commands = dict()
   for cmd in commands:
-    c = commands[cmd]
-    if c['module'] != module:
-      new_commands[cmd] = c
+    newlist = []
+    for c in commands[cmd]:
+      if c['module'] != module:
+        newlist.append(c)
+    if len(newlist) > 0:
+      new_commands[cmd] = newlist
   commands = new_commands
 

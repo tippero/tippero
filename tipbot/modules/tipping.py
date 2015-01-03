@@ -242,7 +242,17 @@ def RainActive(nick,chan,cmd):
     SendTo(chan, "An error has occured")
     return
 
+def Help(nick,chan):
+  SendTo(nick,'You can tip other people, or rain %s on them' % coinspecs.name)
+  SendTo(nick,'!tip tips a single person, while !rain shares equally between people in the channel')
+  SendTo(nick,'!rainactive tips all within the last N hours, with more recently active people')
+  SendTo(nick,'getting a larger share.')
 
+
+RegisterModule({
+  'name': __name__,
+  'help': Help,
+})
 RegisterCommand({
   'module': __name__,
   'name': 'tip',

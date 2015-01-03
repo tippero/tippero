@@ -142,8 +142,13 @@ def DumpUsers(nick,chan,cmd):
   log_info(str(userstable))
 
 def Help(nick,chan,cmd):
+  module = GetParam(cmd,1)
+  if module:
+    RunModuleHelpFunction(module,nick,chan)
+    return
+
   SendTo(nick, "See available commands with !commands or !commands <modulename>")
-  RunHelpFunctions(nick)
+  SendTo(nick, "Get help on a particular module with !help <modulename>")
   if coinspecs.web_wallet_url:
     SendTo(nick, "No %s address ? You can use %s" % (coinspecs.name, coinspecs.web_wallet_url))
 
@@ -195,7 +200,7 @@ def Reload(nick,chan,cmd):
     SendTo(sendto,"Cannot reload builtin module")
     return
   log_info('Unloading %s module' % modulename)
-  UnregisterCommands(modulename)
+  UnregisterModule(modulename)
   log_info('Reloading %s module' % modulename)
   try:
     reload(sys.modules[modulename])
@@ -211,7 +216,7 @@ def OnIdentified(nick, identified):
   RunNextCommand(nick, identified)
 
 def RegisterCommands():
-  RegisterCommand({'module': 'builtin', 'name': 'help', 'function': Help, 'help': "Displays help about %s" % config.tipbot_name})
+  RegisterCommand({'module': 'builtin', 'name': 'help', 'parms': '[module]', 'function': Help, 'help': "Displays help about %s" % config.tipbot_name})
   RegisterCommand({'module': 'builtin', 'name': 'commands', 'parms': '[module]', 'function': Commands, 'help': "Displays list of commands"})
   RegisterCommand({'module': 'builtin', 'name': 'isregistered', 'function': IsRegistered, 'help': "show whether you are currently registered with freenode"})
   RegisterCommand({'module': 'builtin', 'name': 'balance', 'function': GetBalance, 'registered': True, 'help': "show your current balance"})

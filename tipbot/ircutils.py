@@ -24,7 +24,7 @@ irc = None
 sslirc = None
 irc_password = ""
 irc_min_send_delay = 0.05 # seconds
-irc_max_send_delay = 5 # seconds
+irc_max_send_delay = 1.1 # seconds
 
 last_ping_time = time.time()
 last_send_time = 0

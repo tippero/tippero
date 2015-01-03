@@ -388,6 +388,8 @@ def IRCLoop(on_idle,on_identified,on_command):
 
       elif action == 'PRIVMSG':
         UpdateLastActiveTime(chan,GetNick(who))
+        # resplit to avoid splitting text that contains ':'
+        text = data.split(':',2)[2]
         exidx = text.find('!')
         if exidx != -1 and len(text)>exidx+1 and text[exidx+1] in string.ascii_letters:
             cmd = text.split('!')[1]

@@ -2,7 +2,7 @@ This is a Cryptonote IRC tipbot. Released under GPLv2+.
 
 Installation requirements:
   - the daemon/simplewallet for the Cryptonote coin to use
-  - python
+  - python 2
   - redis
   - python-redis
 

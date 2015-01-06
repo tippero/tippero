@@ -19,6 +19,9 @@ calltable=dict()
 idles = []
 cleanup = dict()
 
+def SendToProxy(nick,chan,msg):
+  SendTo(nick,msg)
+
 def RunRegisteredCommand(nick,chan,ifyes,yesdata,ifno,nodata):
   if nick not in calltable:
     calltable[nick] = []
@@ -147,9 +150,9 @@ def OnCommand(cmd,chan,who,check_admin,check_registered):
     else:
       c = commands[cmdname][0]
     if 'admin' in c and c['admin']:
-      check_admin(GetNick(who),chan,c['function'],cmd,SendTo,"You must be admin")
+      check_admin(GetNick(who),chan,c['function'],cmd,SendToProxy,"You must be admin")
     elif 'registered' in c and c['registered']:
-      check_registered(GetNick(who),chan,c['function'],cmd,SendTo,"You must be registered with Freenode")
+      check_registered(GetNick(who),chan,c['function'],cmd,SendToProxy,"You must be registered with Freenode")
     else:
       c['function'](GetNick(who),chan,cmd)
   else:

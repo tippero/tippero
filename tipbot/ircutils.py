@@ -78,6 +78,7 @@ def connect_to_irc(network,port,name,password,delay):
   global irc_network
   global irc_port
   global irc_line_delay
+  global irc_name
   global irc_password
 
   irc_network=network

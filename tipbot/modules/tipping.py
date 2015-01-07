@@ -53,6 +53,10 @@ def Tip(nick,chan,cmd):
     log_info('Tip: %s tipping %s %u units, with balance %u' % (nick, who, units, balance))
     try:
       p = redis_pipeline()
+      p.incrby("tips_total_count",1);
+      p.incrby("tips_total_amount",units);
+      p.hincrby("tips_count",nick,1);
+      p.hincrby("tips_amount",nick,units);
       p.hincrby("balances",nick,-units);
       p.hincrby("balances",who,units)
       p.execute()
@@ -130,6 +134,10 @@ def Rain(nick,chan,cmd):
       msg = "%s rained %s on:" % (nick, AmountToString(user_units))
     pipe = redis_pipeline()
     pipe.hincrby("balances",nick,-units)
+    pipe.incrby("rain_total_count",1);
+    pipe.incrby("rain_total_amount",units);
+    pipe.hincrby("rain_count",nick,1);
+    pipe.hincrby("rain_amount",nick,units);
     for user in userlist:
       pipe.hincrby("balances",user,user_units)
       if not everyone:
@@ -212,6 +220,10 @@ def RainActive(nick,chan,cmd):
 
     pipe = redis_pipeline()
     pipe.hincrby("balances",nick,-units)
+    pipe.incrby("arain_total_count",1);
+    pipe.incrby("arain_total_amount",units);
+    pipe.hincrby("arain_count",nick,1);
+    pipe.hincrby("arain_amount",nick,units);
     rained_units = 0
     nnicks = 0
     minu=None

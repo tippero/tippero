@@ -154,7 +154,7 @@ def Help(nick,chan,cmd):
 
 def Info(nick,chan,cmd):
   SendTo(nick, "Info for %s:" % config.tipbot_name)
-  SendTo(nick, "Copyright 2014 moneromooo - http://duckpool.mooo.com/tipbot/")
+  SendTo(nick, "Copyright 2014,2015 moneromooo - http://duckpool.mooo.com/tipbot/")
   SendTo(nick, "Type !help, or !commands for a list of commands")
   SendTo(nick, "NO WARRANTY, YOU MAY LOSE YOUR COINS")
   SendTo(nick, "By sending your %s to %s, you are giving up their control" % (coinspecs.name, config.tipbot_name))

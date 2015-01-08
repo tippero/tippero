@@ -104,6 +104,9 @@ def UpdateCoin(param):
     log_error('UpdateCoin: Failed to get bulk payments: %s' % str(e))
   last_wallet_update_time = time.time()
 
+def Deposit(nick,chan,cmd):
+  Help(nick,chan)
+
 def Help(nick,chan):
   SendTo(nick, "You can send %s to your account:" % coinspecs.name);
   SendTo(nick, "  Address: %s" % GetTipbotAddress())
@@ -112,6 +115,13 @@ def Help(nick,chan):
 RegisterModule({
   'name': __name__,
   'help': Help,
+})
+RegisterCommand({
+  'module': __name__,
+  'name': 'deposit',
+  'function': Deposit,
+  'admin': True,
+  'help': "Show instructions about depositing %s" % coinspecs.name
 })
 RegisterIdleFunction(__name__,UpdateCoin)
 

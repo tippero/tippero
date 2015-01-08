@@ -62,6 +62,7 @@ def Tip(nick,chan,cmd):
       p.execute()
       SendTo(sendto,"%s has tipped %s %s" % (nick, who, AmountToString(units)))
     except Exception, e:
+      log_error("Tip: Error updating redis: %s" % str(e))
       SendTo(sendto, "An error occured")
       return
   except Exception, e:

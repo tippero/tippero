@@ -120,7 +120,6 @@ RegisterCommand({
   'module': __name__,
   'name': 'deposit',
   'function': Deposit,
-  'admin': True,
   'help': "Show instructions about depositing %s" % coinspecs.name
 })
 RegisterIdleFunction(__name__,UpdateCoin)

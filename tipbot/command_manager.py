@@ -70,7 +70,7 @@ def Commands(nick,chan,cmd):
   if module_name:
     SendTo(nick, "Commands for %s's %s module:" % (config.tipbot_name,module_name))
   else:
-    SendTo(nick, "Commands for %s (!commands <modulename> for command help):" % config.tipbot_name)
+    SendTo(nick, "Commands for %s (use !commands <modulename> for help about the module's commands):" % config.tipbot_name)
 
   msgs = dict()
   for command_name in commands:

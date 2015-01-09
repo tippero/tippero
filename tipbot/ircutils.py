@@ -18,7 +18,7 @@ import time
 import string
 import base64
 import tipbot.config as config
-from tipbot.log import log_error, log_warn, log_info, log_log, log_IRCSEND, log_IRCRECV
+from tipbot.log import log, log_error, log_warn, log_info, log_log
 
 irc_line_delay = 0
 irc = None
@@ -37,6 +37,12 @@ irc_quitting = False
 
 userstable=dict()
 registered_users=set()
+
+def log_IRCRECV(msg):
+  log("IRCRECV",msg)
+
+def log_IRCSEND(msg):
+  log("IRCSEND",msg)
 
 def SendIRC(msg):
   global last_send_time, current_send_delay

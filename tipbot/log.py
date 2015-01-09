@@ -27,9 +27,3 @@ def log_info(msg):
 def log_log(msg):
   log("LOG",msg)
 
-def log_IRCRECV(msg):
-  log("IRCRECV",msg)
-
-def log_IRCSEND(msg):
-  log("IRCSEND",msg)
-

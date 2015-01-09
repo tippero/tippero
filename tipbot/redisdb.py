@@ -53,3 +53,23 @@ def redis_incrby(k,v):
   return redisdb.incrby(k,v)
 
 
+def CompatibilityCheck():
+  try:
+    r = redis.Redis()
+    if not r.pipeline: raise RuntimeError('pipeline call not found')
+    p = r.pipeline()
+    if not p.get: raise RuntimeError('get call not found')
+    if not p.set: raise RuntimeError('set call not found')
+    if not p.hexists: raise RuntimeError('hexists call not found')
+    if not p.hget: raise RuntimeError('hget call not found')
+    if not p.hgetall: raise RuntimeError('hgetall call not found')
+    if not p.hset: raise RuntimeError('hset call not found')
+    if not p.hincrby: raise RuntimeError('hincrby call not found')
+    if not p.incrby: raise RuntimeError('incrby call not found')
+    if not p.execute: raise RuntimeError('execute call not found')
+  except Exception,e:
+    log_error('Error checking redis compatibility: %s' % str(e))
+    exit(1)
+
+CompatibilityCheck()
+

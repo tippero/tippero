@@ -19,6 +19,8 @@ irc_welcome_line = 'Welcome to the freenode Internet Relay Chat Network'
 irc_channels = ['#txtptest000']
 irc_timeout_seconds = 600
 irc_use_ssl = True
+irc_use_sasl = True
+irc_sasl_name = "monero-tipbot"
 
 redis_host="127.0.0.1"
 redis_port=7777

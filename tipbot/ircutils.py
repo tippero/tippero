@@ -16,6 +16,7 @@ import ssl
 import select
 import time
 import string
+import base64
 import tipbot.config as config
 from tipbot.log import log_error, log_warn, log_info, log_log, log_IRCSEND, log_IRCRECV
 
@@ -103,7 +104,10 @@ def connect_to_irc(network,port,name,password,delay):
     log_error( 'Error initializing IRC: %s' % str(e))
     exit()
   log_IRCRECV(irc_recv(4096))
-  SendIRC ( 'PASS *********')
+  if config.irc_use_sasl:
+    SendIRC('CAP REQ :sasl')
+  else:
+    SendIRC ( 'PASS *********')
   SendIRC ( 'NICK %s' % name)
   SendIRC ( 'USER %s %s %s :%s' % (name, name, name, name))
   return irc
@@ -278,7 +282,8 @@ def IRCLoop(on_idle,on_identified,on_command):
     if data.find ( config.irc_welcome_line ) != -1:
       userstable = dict()
       registered_users.clear()
-      SendTo("nickserv", "IDENTIFY %s" % irc_password)
+      if not config.irc_use_sasl:
+        SendTo("nickserv", "IDENTIFY %s" % irc_password)
       for chan in config.irc_channels:
         Join(chan)
         #ScanWho(None,[chan])
@@ -288,6 +293,13 @@ def IRCLoop(on_idle,on_identified,on_command):
       last_ping_time = time.time()
       SendIRC ( 'PONG ' + data.split() [ 1 ])
       continue
+
+    if data.startswith('AUTHENTICATE +'):
+      if config.irc_use_sasl:
+        authstring = config.irc_sasl_name + chr(0) + config.irc_sasl_name + chr(0) + irc_password
+        SendIRC('AUTHENTICATE %s' % base64.b64encode(authstring))
+      else:
+        log_warn('Got AUTHENTICATE while not using SASL')
 
     if data.find('ERROR :Closing Link:') == 0:
       if irc_quitting:
@@ -337,6 +349,16 @@ def IRCLoop(on_idle,on_identified,on_command):
 
     #----------------------------- Actions -----------------------------------#
     try:
+      if action == 'CAP':
+        if parts[2] == '*' and parts[3] == 'ACK':
+          log_info('CAP ACK received from server')
+          SendIRC('AUTHENTICATE PLAIN')
+        elif parts[2] == '*' and parts[3] == 'NAK':
+          log_info('CAP NAK received from server')
+          log_error('Failed to negotiate SASL')
+          exit()
+        else:
+          log_warn('Unknown CAP line received from server: %s' % data)
       if action == 'NOTICE':
         if text.find ('throttled due to flooding') >= 0:
           log_warn('Flood protection kicked in, outgoing messages lost')
@@ -363,6 +385,12 @@ def IRCLoop(on_idle,on_identified,on_command):
                   on_identified(ns_nick, False)
               else:
                 log_error('ACC line not as expected...')
+
+      elif action == '903':
+        log_info('SASL authentication success')
+        SendIRC('CAP END')
+      elif action in ['902', '904', '905', '906']:
+        log_error('SASL authentication failed (%s)' % action)
 
       elif action == '352':
         try:

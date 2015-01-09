@@ -49,4 +49,7 @@ def redis_hset(t,k,v):
 def redis_hincrby(t,k,v):
   return redisdb.hincrby(t,k,v)
 
+def redis_incrby(k,v):
+  return redisdb.incrby(k,v)
+
 

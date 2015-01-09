@@ -17,6 +17,7 @@ import select
 import time
 import string
 import base64
+import re
 import tipbot.config as config
 from tipbot.log import log, log_error, log_warn, log_info, log_log
 
@@ -325,6 +326,13 @@ def IRCLoop(on_idle,on_identified,on_command):
         cparts = data.split(':')
         if len(cparts) < 2:
             continue
+        if len(cparts) >= 9:
+          idx_colon = data.find(':',1)
+          idx_space = data.find(' ')
+          if idx_space and idx_colon < idx_space and re.search("@([0-9a-fA-F]+:){7}[0-9a-fA-F]+", data):
+            log_info('Found IPv6 address in non-text, restructuring')
+            idx = data.rfind(':')
+            cparts = [ cparts[0], "".join(cparts[1:]) ]
         if len(cparts) >= 3:
           text = cparts[2]
         else:
@@ -340,6 +348,8 @@ def IRCLoop(on_idle,on_identified,on_command):
     if action == None:
         continue
 
+    #print 'cparts: ', str(cparts)
+    #print 'parts: ', str(parts)
     #print 'text: ', text
     #print 'who: ', who
     #print 'action: ', action

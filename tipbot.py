@@ -94,13 +94,28 @@ def GetBalance(nick,chan,cmd):
     SendTo(sendto, "An error has occured")
 
 def AddBalance(nick,chan,cmd):
-  amount=cmd[1]
-  log_info("AddBalance: Adding %s to %s's balance" % (AmountToString(amount),nick))
+  sendto = GetSendTo(nick,chan)
+  if GetParam(cmd,2):
+    anick = GetParam(cmd,1)
+    amount = GetParam(cmd,2)
+  else:
+    anick = nick
+    amount = GetParam(cmd,1)
+  if not amount:
+    SendTo(sendto, 'usage: !addbalance <atomicunits> or !addbalance <nick> <atomicunits>')
+    return
   try:
-    balance = redis_hincrby("balances",nick,amount)
+    units = long(amount)
+  except Exception,e:
+    log_error('AddBalance: error converting amount: %s' % str(e))
+    SendTo(sendto, 'usage: !addbalance <atomicunits> or !addbalance <nick> <atomicunits>')
+    return
+  log_info("AddBalance: Adding %s to %s's balance" % (AmountToString(amount),anick))
+  try:
+    balance = redis_hincrby("balances",anick,amount)
   except Exception, e:
     log_error('AddBalance: exception: %s' % str(e))
-    SendTo(nick, "An error has occured")
+    SendTo(sendto, "An error has occured")
 
 def ScanWho(nick,chan,cmd):
   Who(chan)
@@ -224,7 +239,7 @@ def RegisterCommands():
 
   RegisterCommand({'module': 'builtin', 'name': 'height', 'function': GetHeight, 'admin': True, 'help': "Get current blockchain height"})
   RegisterCommand({'module': 'builtin', 'name': 'tipbot_balance', 'function': GetTipbotBalance, 'admin': True, 'help': "Get current blockchain height"})
-  RegisterCommand({'module': 'builtin', 'name': 'addbalance', 'function': AddBalance, 'admin': True, 'help': "Add balance to your account"})
+  RegisterCommand({'module': 'builtin', 'name': 'addbalance', 'parms': '<nick> <amount>', 'function': AddBalance, 'admin': True, 'help': "Add balance to your account"})
   RegisterCommand({'module': 'builtin', 'name': 'scanwho', 'function': ScanWho, 'admin': True, 'help': "Refresh users list in a channel"})
   RegisterCommand({'module': 'builtin', 'name': 'dump_users', 'function': DumpUsers, 'admin': True, 'help': "Dump users table to log"})
   RegisterCommand({'module': 'builtin', 'name': 'show_activity', 'function': ShowActivity, 'admin': True, 'help': "Show time since a user was last active"})

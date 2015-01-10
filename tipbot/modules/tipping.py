@@ -161,6 +161,9 @@ def RainActive(nick,chan,cmd):
   if chan[0] != '#':
     SendTo(nick, "Raining can only be done in a channel")
     return
+  if not amount or not hours:
+    SendTo(chan, "usage: !rainactive <amount> <hours> [<minfrac>]")
+    return
   try:
     amount=float(amount)
     if amount <= 0:
@@ -285,7 +288,7 @@ RegisterCommand({
 RegisterCommand({
   'module': __name__,
   'name': 'rainactive',
-  'parms': '<amount> [<hours>]',
+  'parms': '<amount> <hours> [<minfrac>]',
   'function': RainActive,
   'registered': True,
   'help': "rain some coins on whoever was active recently"

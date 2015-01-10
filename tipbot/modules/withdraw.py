@@ -58,7 +58,7 @@ def Withdraw(nick,chan,cmd):
   try:
     address=cmd[1]
   except Exception,e:
-    SendTo(sendto, "Usage: withdraw address [amount]")
+    SendTo(nick, "Usage: withdraw address [amount]")
     return
 
   if not IsValidAddress(address):

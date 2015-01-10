@@ -165,6 +165,8 @@ def GetSendTo(nick,chan):
   return nick
 
 def UpdateLastActiveTime(chan,nick):
+  if chan[0] != '#':
+    return
   if not chan in userstable:
     log_error("UpdateLastActiveTime: %s spoke in %s, but %s not found in users table" % (nick, chan, chan))
     userstable[chan] = dict()

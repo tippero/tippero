@@ -255,3 +255,7 @@ InitScanBlockHeight()
 RegisterCommands()
 
 IRCLoop(OnIdle,OnIdentified,OnCommandProxy)
+
+log_info('shutting down redis')
+redisdb.shutdown
+log_info('exiting')

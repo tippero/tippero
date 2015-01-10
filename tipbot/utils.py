@@ -49,9 +49,9 @@ def GetPaymentID(nick):
     log_error('GetPaymentID: failed to set payment ID for %s to redis: %s' % (nick,str(e)))
   return p
 
-def GetNickFromPaymendID(p):
+def GetNickFromPaymentID(p):
   nick = redis_hget("paymentid",p)
-  log_log('PaymendID %s => %s' % (p, str(nick)))
+  log_log('PaymentID %s => %s' % (p, str(nick)))
   return nick
 
 def AmountToString(amount):

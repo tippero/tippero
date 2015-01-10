@@ -87,7 +87,7 @@ def UpdateCoin(param):
             tx_hash=p["tx_hash"]
             amount=p["amount"]
             try:
-              recipient = GetNickFromPaymendID(payment_id)
+              recipient = GetNickFromPaymentID(payment_id)
               log_info('UpdateCoin: Found payment %s to %s for %s' % (tx_hash,recipient, AmountToString(amount)))
               pipe.hincrby("balances",recipient,amount);
             except Exception,e:

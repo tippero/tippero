@@ -495,7 +495,7 @@ def IRCLoop(on_idle,on_identified,on_command):
 
       elif action == 'NICK':
         nick = GetNick(who)
-        new_nick = text
+        new_nick = cparts[len(cparts)-1]
         log_info('%s renamed to %s' % (nick, new_nick))
         for c in userstable:
           log_log('checking %s' % c)

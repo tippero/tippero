@@ -87,8 +87,12 @@ def GetBalance(nick,chan,cmd):
     balance = redis_hget("balances",nick)
     if balance == None:
       balance = 0
+    balance = long(balance)
     sbalance = AmountToString(balance)
-    SendTo(sendto, "%s's balance is %s" % (nick, sbalance))
+    if balance < coinspecs.atomic_units:
+      SendTo(sendto, "%s's balance is %s (%.16g %s)" % (nick, sbalance, float(balance) / coinspecs.atomic_units, coinspecs.name))
+    else:
+      SendTo(sendto, "%s's balance is %s" % (nick, sbalance))
   except Exception, e:
     log_error('GetBalance: exception: %s' % str(e))
     SendTo(sendto, "An error has occured")

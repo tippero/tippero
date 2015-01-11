@@ -28,6 +28,9 @@ def connect_to_redis(host,port):
 def redis_pipeline():
   return redisdb.pipeline()
 
+def redis_exists(k):
+  return redisdb.exists(k)
+
 def redis_get(k):
   return redisdb.get(k)
 
@@ -52,12 +55,16 @@ def redis_hincrby(t,k,v):
 def redis_incrby(k,v):
   return redisdb.incrby(k,v)
 
+def redis_delete(k):
+  return redisdb.delete(k)
+
 
 def CompatibilityCheck():
   try:
     r = redis.Redis()
     if not r.pipeline: raise RuntimeError('pipeline call not found')
     p = r.pipeline()
+    if not p.exists: raise RuntimeError('exists call not found')
     if not p.get: raise RuntimeError('get call not found')
     if not p.set: raise RuntimeError('set call not found')
     if not p.hexists: raise RuntimeError('hexists call not found')
@@ -67,6 +74,7 @@ def CompatibilityCheck():
     if not p.hincrby: raise RuntimeError('hincrby call not found')
     if not p.incrby: raise RuntimeError('incrby call not found')
     if not p.execute: raise RuntimeError('execute call not found')
+    if not p.delete: raise RuntimeError('delete call not found')
   except Exception,e:
     log_error('Error checking redis compatibility: %s' % str(e))
     exit(1)

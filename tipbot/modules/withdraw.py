@@ -38,14 +38,6 @@ def CheckDisableWithdraw():
   if config.disable_withdraw_on_error:
     DisableWithdraw(None,None,None)
 
-def IsValidAddress(address):
-  if len(address) < coinspecs.address_length[0] or len(address) > coinspecs.address_length[1]:
-    return False
-  for prefix in coinspecs.address_prefix:
-    if address.startswith(prefix):
-      return True
-  return False
-
 def Withdraw(nick,chan,cmd):
   local_withdraw_fee = config.withdrawal_fee or coinspecs.min_withdrawal_fee
   local_min_withdraw_amount = config.min_withdraw_amount or local_withdraw_fee

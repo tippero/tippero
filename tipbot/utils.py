@@ -54,6 +54,14 @@ def GetNickFromPaymentID(p):
   log_log('PaymentID %s => %s' % (p, str(nick)))
   return nick
 
+def IsValidAddress(address):
+  if len(address) < coinspecs.address_length[0] or len(address) > coinspecs.address_length[1]:
+    return False
+  for prefix in coinspecs.address_prefix:
+    if address.startswith(prefix):
+      return True
+  return False
+
 def AmountToString(amount):
   if amount == None:
     amount = 0

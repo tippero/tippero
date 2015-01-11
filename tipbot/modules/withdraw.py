@@ -14,6 +14,7 @@ import json
 import string
 from tipbot.log import log_error, log_warn, log_info, log_log
 import tipbot.coinspecs as coinspecs
+import tipbot.config as config
 from tipbot.utils import *
 from tipbot.ircutils import *
 from tipbot.redisdb import *

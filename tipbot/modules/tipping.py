@@ -129,10 +129,14 @@ def Rain(nick,chan,cmd):
     log_log("selected users in %s: %s" % (chan, userlist))
     user_units = long(units / users)
 
+    enumerate_users = False
     if everyone:
       msg = "%s rained %s on everyone in the channel" % (nick, AmountToString(user_units))
+    elif len(userlist) > 16:
+      msg = "%s rained %s on %d nicks" % (nick, AmountToString(user_units), len(userlist))
     else:
       msg = "%s rained %s on:" % (nick, AmountToString(user_units))
+      enumerate_users = True
     pipe = redis_pipeline()
     pipe.hincrby("balances",nick,-units)
     pipe.incrby("rain_total_count",1);
@@ -141,7 +145,7 @@ def Rain(nick,chan,cmd):
     pipe.hincrby("rain_amount",nick,units);
     for user in userlist:
       pipe.hincrby("balances",user,user_units)
-      if not everyone:
+      if enumerate_users:
         msg = msg + " " + user
     pipe.execute()
     SendTo(chan, "%s" % msg)

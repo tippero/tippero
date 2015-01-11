@@ -163,6 +163,7 @@ def Help(nick,chan,cmd):
     return
 
   SendTo(nick, "See available commands with !commands or !commands <modulename>")
+  SendTo(nick, "Available modules: %s" % ", ".join(GetModuleNameList(IsAdmin(nick))))
   SendTo(nick, "Get help on a particular module with !help <modulename>")
   if coinspecs.web_wallet_url:
     SendTo(nick, "No %s address ? You can use %s" % (coinspecs.name, coinspecs.web_wallet_url))

@@ -102,6 +102,22 @@ def RegisterModule(module):
     return
   modules[module['name']] = module
 
+def GetModuleNameList(admin):
+  if admin:
+    all = True
+  else:
+    all = False
+
+  module_names = []
+  for command_name in commands:
+    for c in commands[command_name]:
+      if 'admin' in c and c['admin'] and not all:
+        continue
+      module = c['module']
+      if not module in module_names:
+        module_names.append(module)
+  return module_names
+
 def RegisterCommand(command):
   if command['name'] in commands:
     log_warn('module %s redefined function %s from module %s' % (command['module'],command['name'],commands[command['name']][0]['module']))

@@ -32,6 +32,7 @@ wallet_port = 6061
 wallet_update_time = 30 # seconds
 withdrawal_fee=None # None defaults to the network default fee
 min_withdraw_amount = None # None defaults to the withdrawal fee
+withdrawal_mixin=0
 disable_withdraw_on_error = True
 
 admins = ["moneromooo", "moneromoo"]

@@ -106,7 +106,7 @@ def Withdraw(nick,chan,cmd):
       'destinations': [{'address': address, 'amount': topay}],
       'payment_id': GetPaymentID(nick),
       'fee': fee,
-      'mixin': 0,
+      'mixin': config.withdrawal_mixin,
       'unlock_time': 0,
     }
     j = SendWalletJSONRPCCommand("transfer",params)

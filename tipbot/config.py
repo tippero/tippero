@@ -40,4 +40,11 @@ admins = ["moneromooo", "moneromoo"]
 # list of nicks to ignore for rains - bots, trolls, etc
 no_rain_to_nicks = []
 
+dice_edge = 0.01
+dice_max_bet = 5
+dice_min_bet = 0.001
+# how much are we prepared to lose
+dice_max_loss = 10
+# how much are we prepared to lose as a ratio of our current pot
+dice_max_loss_ratio = 0.05
 

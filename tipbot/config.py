@@ -77,3 +77,7 @@ blackjack_min_bet = 0.001
 blackjack_max_loss = 10
 # how much are we prepared to lose as a ratio of our current pot
 blackjack_max_loss_ratio = 0.05
+
+bookie_fee = 0.01
+bookie_min_bet = 0.001
+bookie_max_bet = 1000

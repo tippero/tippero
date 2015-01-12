@@ -53,3 +53,14 @@ dice_max_loss = 10
 # how much are we prepared to lose as a ratio of our current pot
 dice_max_loss_ratio = 0.05
 
+# see http://wizardofodds.com/games/blackjack/calculator/
+blackjack_decks = 4
+blackjack_split_to = 4
+blackjack_insurance = True
+blackjack_sidebets = ["over13", "under13", "pair", "climber", "buster", "splits", "match", "addup"]
+blackjack_max_bet = 5
+blackjack_min_bet = 0.001
+# how much are we prepared to lose
+blackjack_max_loss = 10
+# how much are we prepared to lose as a ratio of our current pot
+blackjack_max_loss_ratio = 0.05

@@ -20,7 +20,7 @@ idles = []
 cleanup = dict()
 
 def SendToProxy(nick,chan,msg):
-  SendTo(nick,msg)
+  SendTo(GetSendTo(nick,chan),msg)
 
 def RunRegisteredCommand(nick,chan,ifyes,yesdata,ifno,nodata):
   if nick not in calltable:

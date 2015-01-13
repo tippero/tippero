@@ -140,18 +140,6 @@ def Who(chan):
     userstable[chan] = dict()
     SendIRC ( 'WHO ' + chan)
 
-def GetHost(host):                            # Return Host
-    host = host.split('@')[1]
-    host = host.split(' ')[0]
-    return host
-
-def GetChannel(data):                        # Return Channel
-    channel = data.split('#')[1]
-    channel = channel.split(':')[0]
-    channel = '#' + channel
-    channel = channel.strip(' \t\n\r')
-    return channel
-
 def GetNick(data):                            # Return Nickname
     nick = data.split('!')[0]
     nick = nick.replace(':', ' ')

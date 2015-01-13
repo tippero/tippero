@@ -52,6 +52,9 @@ def redis_hset(t,k,v):
 def redis_hincrby(t,k,v):
   return redisdb.hincrby(t,k,v)
 
+def redis_hdel(t,k):
+  return redisdb.hdel(t,k)
+
 def redis_incrby(k,v):
   return redisdb.incrby(k,v)
 
@@ -78,6 +81,7 @@ def CompatibilityCheck():
     if not p.hgetall: raise RuntimeError('hgetall call not found')
     if not p.hset: raise RuntimeError('hset call not found')
     if not p.hincrby: raise RuntimeError('hincrby call not found')
+    if not p.hdel: raise RuntimeError('hdel call not found')
     if not p.incrby: raise RuntimeError('incrby call not found')
     if not p.sadd: raise RuntimeError('sadd call not found')
     if not p.smembers: raise RuntimeError('smembers call not found')

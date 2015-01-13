@@ -25,8 +25,10 @@ import importlib
 import tipbot.coinspecs as coinspecs
 import tipbot.config as config
 from tipbot.log import log_error, log_warn, log_info, log_log
+from tipbot.link import *
+from tipbot.user import *
+from tipbot.group import *
 from tipbot.utils import *
-from tipbot.ircutils import *
 from tipbot.redisdb import *
 from tipbot.command_manager import *
 
@@ -73,6 +75,9 @@ if not selected_coin:
 
 sys.path.append(os.path.join('tipbot','modules'))
 for modulename in modulenames:
+  if modulename in sys.modules:
+    log_error('A %s module already exists' % modulename)
+    exit(1)
   log_info('Importing %s module' % modulename)
   try:
     __import__(modulename)
@@ -82,28 +87,28 @@ for modulename in modulenames:
 
 
 
-def GetBalance(nick,chan,cmd):
-  sendto=GetSendTo(nick,chan)
-  log_log("GetBalance: checking %s" % nick)
+def GetBalance(link,cmd):
+  nick=link.user.nick
+  log_log("GetBalance: checking %s (%s)" % (link.identity(),str(link)))
   try:
-    balance = redis_hget("balances",nick)
+    balance = redis_hget("balances",link.identity())
     if balance == None:
       balance = 0
     balance = long(balance)
     sbalance = AmountToString(balance)
     if balance < coinspecs.atomic_units:
       if balance == 0:
-        SendTo(sendto, "%s's balance is %s" % (nick, sbalance))
+        link.send("%s's balance is %s" % (nick, sbalance))
       else:
-        SendTo(sendto, "%s's balance is %s (%.16g %s)" % (nick, sbalance, float(balance) / coinspecs.atomic_units, coinspecs.name))
+        link.send("%s's balance is %s (%.16g %s)" % (nick, sbalance, float(balance) / coinspecs.atomic_units, coinspecs.name))
     else:
-      SendTo(sendto, "%s's balance is %s" % (nick, sbalance))
+      link.send("%s's balance is %s" % (nick, sbalance))
   except Exception, e:
     log_error('GetBalance: exception: %s' % str(e))
-    SendTo(sendto, "An error has occured")
+    link.send("An error has occured")
 
-def AddBalance(nick,chan,cmd):
-  sendto = GetSendTo(nick,chan)
+def AddBalance(link,cmd):
+  nick=link.user.nick
   if GetParam(cmd,2):
     anick = GetParam(cmd,1)
     amount = GetParam(cmd,2)
@@ -111,85 +116,91 @@ def AddBalance(nick,chan,cmd):
     anick = nick
     amount = GetParam(cmd,1)
   if not amount:
-    SendTo(sendto, 'usage: !addbalance [<nick>] <amount>')
+    link.send('usage: !addbalance [<nick>] <amount>')
     return
   try:
     units = long(float(amount)*coinspecs.atomic_units)
   except Exception,e:
-    log_error('AddBalance: invalid amount: %s' % str(e))
-    SendTo(sendto, 'usage: !addbalance [<nick>] <amount>')
+    log_error('AddBalance: error converting amount: %s' % str(e))
+    link.send('usage: !addbalance [<nick>] <amount>')
     return
-  log_info("AddBalance: Adding %s to %s's balance" % (AmountToString(units),anick))
+  if anick.find(':') == -1:
+    network=link.network
+    log_info('No network found in %s, using %s from command originator' % (anick,network.name))
+    aidentity=Link(network,User(network,anick)).identity()
+  else:
+    aidentity=anick
+  log_info("AddBalance: Adding %s to %s's balance" % (AmountToString(units),aidentity))
   try:
-    balance = redis_hincrby("balances",anick,units)
+    balance = redis_hincrby("balances",aidentity,units)
   except Exception, e:
     log_error('AddBalance: exception: %s' % str(e))
-    SendTo(sendto, "An error has occured")
-  SendTo(sendto,"%s's bvalance is now %s" % (anick,AmountToString(balance)))
+    link.send( "An error has occured")
+  link.send("%s's balance is now %s" % (aidentity,AmountToString(balance)))
 
-def ScanWho(nick,chan,cmd):
-  Who(chan)
+def ScanWho(link,cmd):
+  link.network.update_users_list(link.group.name if link.group else None)
 
-def GetHeight(nick,chan,cmd):
-  log_info('GetHeight: %s wants to know block height' % nick)
+def GetHeight(link,cmd):
+  log_info('GetHeight: %s wants to know block height' % str(link))
   try:
     j = SendDaemonHTMLCommand("getheight")
   except Exception,e:
     log_error('GetHeight: error: %s' % str(e))
-    SendTo(nick,"An error has occured")
+    link.send("An error has occured")
     return
   log_log('GetHeight: Got reply: %s' % str(j))
   if not "height" in j:
     log_error('GetHeight: Cannot see height in here')
-    SendTo(nick, "Height not found")
+    link.send("Height not found")
     return
   height=j["height"]
   log_info('GetHeight: height is %s' % str(height))
-  SendTo(nick, "Height: %s" % str(height))
+  link.send("Height: %s" % str(height))
 
-def GetTipbotBalance(nick,chan,cmd):
-  log_info('%s wants to know the tipbot balance' % nick)
+def GetTipbotBalance(link,cmd):
+  log_info('%s wants to know the tipbot balance' % str(link))
   try:
     balance, unlocked_balance = RetrieveTipbotBalance()
   except Exception,e:
-    SendTo(nick,"An error has occured")
+    link.send("An error has occured")
     return
   pending = long(balance)-long(unlocked_balance)
   if pending == 0:
     log_info("GetTipbotBalance: Tipbot balance: %s" % AmountToString(balance))
-    SendTo(nick,"Tipbot balance: %s" % AmountToString(balance))
+    link.send("Tipbot balance: %s" % AmountToString(balance))
   else:
     log_info("GetTipbotBalance: Tipbot balance: %s (%s pending)" % (AmountToString(unlocked_balance), AmountToString(pending)))
-    SendTo(nick,"Tipbot balance: %s (%s pending)" % (AmountToString(unlocked_balance), AmountToString(pending)))
+    link.send("Tipbot balance: %s (%s pending)" % (AmountToString(unlocked_balance), AmountToString(pending)))
 
-def DumpUsers(nick,chan,cmd):
-  userstable = GetUsersTable()
-  log_info(str(userstable))
+def DumpUsers(link,cmd):
+  for network in networks:
+    network.dump_users()
 
-def Help(nick,chan,cmd):
+def Help(link,cmd):
   module = GetParam(cmd,1)
   if module:
-    RunModuleHelpFunction(module,nick,chan)
+    RunModuleHelpFunction(module,link)
     return
 
-  SendTo(nick, "See available commands with !commands or !commands <modulename>")
-  SendTo(nick, "Available modules: %s" % ", ".join(GetModuleNameList(IsAdmin(nick))))
-  SendTo(nick, "Get help on a particular module with !help <modulename>")
+  link.send("See available commands with !commands or !commands <modulename>")
+  link.send("Available modules: %s" % ", ".join(GetModuleNameList(IsAdmin(link))))
+  link.send("Get help on a particular module with !help <modulename>")
   if coinspecs.web_wallet_url:
-    SendTo(nick, "No %s address ? You can use %s" % (coinspecs.name, coinspecs.web_wallet_url))
+    link.send("No %s address ? You can use %s" % (coinspecs.name, coinspecs.web_wallet_url))
 
-def Info(nick,chan,cmd):
-  SendTo(nick, "Info for %s:" % config.tipbot_name)
-  SendTo(nick, "Copyright 2014,2015 moneromooo - http://duckpool.mooo.com/tipbot/")
-  SendTo(nick, "Type !help, or !commands for a list of commands")
-  SendTo(nick, "NO WARRANTY, YOU MAY LOSE YOUR COINS")
-  SendTo(nick, "By sending your %s to %s, you are giving up their control" % (coinspecs.name, config.tipbot_name))
-  SendTo(nick, "to whoever runs the tipbot. Any tip you make/receive using %s" % config.tipbot_name)
-  SendTo(nick, "is obviously not anonymous. %s's wallet may end up corrupt, or be" % config.tipbot_name)
-  SendTo(nick, "stolen, the server compromised, etc. While I hope this won't be the case,")
-  SendTo(nick, "I will not offer any warranty whatsoever for the use of %s or the" % config.tipbot_name)
-  SendTo(nick, "return of any %s. Use at your own risk." % coinspecs.name)
-  SendTo(nick, "That being said, I hope you enjoy using it :)")
+def Info(link,cmd):
+  link.send("Info for %s:" % config.tipbot_name)
+  link.send("Copyright 2014,2015 moneromooo - http://duckpool.mooo.com/tipbot/")
+  link.send("Type !help, or !commands for a list of commands")
+  link.send("NO WARRANTY, YOU MAY LOSE YOUR COINS")
+  link.send("By sending your %s to %s, you are giving up their control" % (coinspecs.name, config.tipbot_name))
+  link.send("to whoever runs the tipbot. Any tip you make/receive using %s" % config.tipbot_name)
+  link.send("is obviously not anonymous. %s's wallet may end up corrupt, or be" % config.tipbot_name)
+  link.send("stolen, the server compromised, etc. While I hope this won't be the case,")
+  link.send("I will not offer any warranty whatsoever for the use of %s or the" % config.tipbot_name)
+  link.send("return of any %s. Use at your own risk." % coinspecs.name)
+  link.send("That being said, I hope you enjoy using it :)")
 
 def InitScanBlockHeight():
   try:
@@ -201,56 +212,83 @@ def InitScanBlockHeight():
     except Exception,e:
       log_error('Failed to initialize scan_block_height: %s' % str(e))
 
-def ShowActivity(nick,chan,cmd):
-  achan=cmd[1]
-  anick=cmd[2]
-  activity = GetTimeSinceActive(achan,anick)
-  if activity:
-    SendTo(nick,"%s was active in %s %f seconds ago" % (anick,achan,activity))
+def ShowActivity(link,cmd):
+  anick=GetParam(cmd,1)
+  achan=GetParam(cmd,2)
+  if not anick or not achan:
+    link.send('usage: !show_activity <nick> <chan>')
+    return
+  if anick.find(':') == -1:
+    network = link.network
   else:
-    SendTo(nick,"%s was never active in %s" % (anick,achan))
+    parts=anick.split(':')
+    network_name=parts[0]
+    anick=parts[1]
+    network = GetNetworkByName(network_name)
+  if network:
+    last_activity = network.get_last_active_time(anick,achan)
+    if last_activity:
+      link.send("%s was active in %s %f seconds ago" % (anick,achan,now-last_activity))
+    else:
+      link.send("%s was never active in %s" % (anick,achan))
+  else:
+    link.send("%s is not a valid network" % network)
 
-def SendToNick(nick,chan,msg):
-  SendTo(nick,msg)
+def SendToLink(link,msg):
+  link.send(msg)
 
-def IsRegistered(nick,chan,cmd):
-  RunRegisteredCommand(nick,chan,SendToNick,"You are registered",SendToNick,"You are not registered")
+def IsRegistered(link,cmd):
+  RunRegisteredCommand(link,SendToLink,"You are registered",SendToLink,"You are not registered")
 
-def Reload(nick,chan,cmd):
-  sendto=GetSendTo(nick,chan)
+def Reload(link,cmd):
   modulename=GetParam(cmd,1)
   if not modulename:
-    SendTo(sendto,"Usage: reload <modulename>")
+    link.send("Usage: reload <modulename>")
     return
   if modulename=="builtin":
-    SendTo(sendto,"Cannot reload builtin module")
+    link.send("Cannot reload builtin module")
+    return
+  if not modulename in sys.modules:
+    link.send("%s is not a dynamic module" % modulename)
     return
   log_info('Unloading %s module' % modulename)
   UnregisterModule(modulename)
   log_info('Reloading %s module' % modulename)
   try:
     reload(sys.modules[modulename])
-    SendTo(sendto,'%s reloaded' % modulename)
+    link.send('%s reloaded' % modulename)
   except Exception,e:
     log_error('Failed to load module "%s": %s' % (modulename, str(e)))
-    SendTo(sendto,'An error occured')
+    link.send('An error occured')
 
-def Disable(nick,chan,cmd):
+def Disable(link,cmd):
   global disabled
-  sendto=GetSendTo(nick,chan)
   disabled = True
-  SendTo(sendto,'%s disabled, will require restart' % config.tipbot_name)
+  link.send('%s disabled, will require restart' % config.tipbot_name)
 
 def OnIdle():
   if disabled:
     return
   RunIdleFunctions([irc,redisdb])
 
-def OnIdentified(nick, identified):
+def Quit(link,cmd):
+  global networks
+  msg = ""
+  for w in cmd[1:]:
+    msg = msg + " " + w
+  for network in networks:
+    log_info('Quitting %s network' % network.name)
+    network.quit()
+  networks = []
+
+def OnIdle():
+  RunIdleFunctions()
+
+def OnIdentified(link, identified):
   if disabled:
-    log_info('Ignoring identified notification for %s while disabled' % str(nick))
+    log_info('Ignoring identified notification for %s while disabled' % str(link.identity()))
     return
-  RunNextCommand(nick, identified)
+  RunNextCommand(link, identified)
 
 def RegisterCommands():
   RegisterCommand({'module': 'builtin', 'name': 'help', 'parms': '[module]', 'function': Help, 'help': "Displays help about %s" % config.tipbot_name})
@@ -267,20 +305,43 @@ def RegisterCommands():
   RegisterCommand({'module': 'builtin', 'name': 'show_activity', 'function': ShowActivity, 'admin': True, 'help': "Show time since a user was last active"})
   RegisterCommand({'module': 'builtin', 'name': 'reload', 'function': Reload, 'admin': True, 'help': "Reload a module"})
   RegisterCommand({'module': 'builtin', 'name': 'disable', 'function': Disable, 'admin': True, 'help': "Disable %s"%config.tipbot_name})
+  RegisterCommand({'module': 'builtin', 'name': 'quit', 'function': Quit, 'admin': True, 'help': "Quit"})
 
-def OnCommandProxy(cmd,chan,who):
+def OnCommandProxy(link,cmd):
   if disabled:
-    log_info('Ignoring command from %s while disabled: %s' % (str(who),str(cmd)))
+    log_info('Ignoring command from %s while disabled: %s' % (str(link.identity()),str(cmd)))
     return
-  OnCommand(cmd,chan,who,RunAdminCommand,RunRegisteredCommand)
+  link.batch_send_start()
+  try:
+    OnCommand(link,cmd,RunAdminCommand,RunRegisteredCommand)
+  except Exception,e:
+    log_error('Exception running command %s: %s' % (str(cmd),str(e)))
+  link.batch_send_done()
 
+def MigrateBalances():
+  balances=redis_hgetall('balances')
+  for balance in balances:
+    if balance.find(':') == -1:
+      redis_hset('balances','freenode:'+balance,balances[balance])
+      redis_hdel('balances',balance)
 
-redisdb = connect_to_redis(config.redis_host,config.redis_port)
-irc = connect_to_irc(config.irc_network,config.irc_port,config.tipbot_name,GetPassword(),config.irc_send_delay)
-InitScanBlockHeight()
 RegisterCommands()
+redisdb = connect_to_redis(config.redis_host,config.redis_port)
+MigrateBalances()
+InitScanBlockHeight()
 
-IRCLoop(OnIdle,OnIdentified,OnCommandProxy)
+# TODO: make this be created when the module is loaded
+irc = sys.modules["freenode"].FreenodeNetwork()
+irc.set_callbacks(OnCommandProxy,OnIdentified)
+if irc.connect(config.irc_network,config.irc_port,config.tipbot_name,GetPassword(),config.irc_send_delay):
+  AddNetwork(irc)
+
+while len(networks)>0:
+  for network in networks:
+    network.update()
+
+  OnIdle()
+
 
 log_info('shutting down redis')
 redisdb.shutdown

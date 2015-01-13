@@ -20,95 +20,93 @@ import tipbot.config as config
 from tipbot.log import log_error, log_warn, log_info, log_log
 import tipbot.coinspecs as coinspecs
 from tipbot.utils import *
-from tipbot.ircutils import *
 from tipbot.command_manager import *
 from tipbot.redisdb import *
 from tipbot.betutils import *
 
-def GetHouseBalance(nick,chan,cmd):
-  sendto=GetSendTo(nick,chan)
+def GetHouseBalance(link,cmd):
   try:
     balance = RetrieveHouseBalance()
   except Exception,e:
     log_error('Failed to retrieve house balance: %s' % str(e))
-    SendTo(sendto, 'An error occured')
+    link.send('An error occured')
     return
-  SendTo(sendto, 'House balance: %s' % AmountToString(balance))
+  link.send('House balance: %s' % AmountToString(balance))
 
-def Roll(nick):
+def Roll(link):
+  identity=link.identity()
   try:
-    if redis_hexists('dice:rolls',nick):
-      rolls = redis_hget('dice:rolls',nick)
+    if redis_hexists('dice:rolls',identity):
+      rolls = redis_hget('dice:rolls',identity)
       rolls = long(rolls) + 1
     else:
       rolls = 1
   except Exception,e:
-    log_error('Failed to prepare roll for %s: %s' % (nick, str(e)))
+    log_error('Failed to prepare roll for %s: %s' % (identity, str(e)))
     raise
 
   try:
-    s = GetServerSeed(nick,'dice') + ":" + GetPlayerSeed(nick,'dice') + ":" + str(rolls)
+    s = GetServerSeed(link,'dice') + ":" + GetPlayerSeed(link,'dice') + ":" + str(rolls)
     sh = hashlib.sha256(s).hexdigest()
     roll = float(long(sh[0:8],base=16))/0x100000000
     return rolls, roll
   except Exception,e:
-    log_error('Failed to roll for %s: %s' % (nick,str(e)))
+    log_error('Failed to roll for %s: %s' % (identity,str(e)))
     raise
 
-def Dice(nick,chan,cmd):
-  sendto=GetSendTo(nick,chan)
-
+def Dice(link,cmd):
+  identity=link.identity()
   try:
     amount=float(cmd[1])
     units=long(amount*coinspecs.atomic_units)
     multiplier = float(cmd[2])
     overunder=GetParam(cmd,3)
   except Exception,e:
-    SendTo(sendto, "Usage: dice amount multiplier [over|under]")
+    link.send("Usage: dice amount multiplier [over|under]")
     return
   if multiplier < 0.1 or multiplier > 10:
-    SendTo(sendto, "Invalid multiplier: should be between 0.1 and 10")
+    link.send("Invalid multiplier: should be between 0.1 and 10")
     return
   if overunder == "over":
     under=False
   elif overunder == "under" or not overunder:
     under=True
   else:
-    SendTo(sendto, "Usage: dice amount multiplier [over|under]")
+    link.send("Usage: dice amount multiplier [over|under]")
     return
 
-  log_info("Dice: %s wants to bet %s at x%f, %s target" % (nick, AmountToString(units), multiplier, "under" if under else "over"))
+  log_info("Dice: %s wants to bet %s at x%f, %s target" % (identity, AmountToString(units), multiplier, "under" if under else "over"))
   potential_loss = amount * multiplier
   valid,reason = IsBetAmountValid(amount,config.dice_min_bet,config.dice_max_bet,potential_loss,config.dice_max_loss,config.dice_max_loss_ratio)
   if not valid:
-    log_info("Dice: %s's bet refused: %s" % (nick, reason))
-    SendTo(sendto, "%s: %s" % (nick, reason))
+    log_info("Dice: %s's bet refused: %s" % (identity, reason))
+    link.send("%s: %s" % (link.user.nick, reason))
     return
 
   try:
-    balance = redis_hget("balances",nick)
+    balance = redis_hget("balances",identity)
     if balance == None:
       balance = 0
     balance=long(balance)
     if units > balance:
-      log_error ('%s does not have enough balance' % nick)
-      SendTo(sendto, "You only have %s" % (AmountToString(balance)))
+      log_error ('%s does not have enough balance' % identity)
+      link.send("You only have %s" % (AmountToString(balance)))
       return
   except Exception,e:
     log_error ('failed to query balance')
-    SendTo(sendto, "Failed to query balance")
+    link.send("Failed to query balance")
     return
 
   try:
-    rolls, roll = Roll(nick)
+    rolls, roll = Roll(link)
   except:
-    SendTo(sendto,"An error occured")
+    link.send("An error occured")
     return
 
   target = (1 - config.dice_edge) / (1+multiplier)
   if not under:
     target = 1 - target
-  log_info("Dice: %s's #%d roll: %.16g, target %s %.16g" % (nick, rolls, roll, "under" if under else "over", target))
+  log_info("Dice: %s's #%d roll: %.16g, target %s %.16g" % (identity, rolls, roll, "under" if under else "over", target))
 
   lose_units = units
   win_units = long(units * multiplier)
@@ -118,129 +116,140 @@ def Dice(nick,chan,cmd):
   else:
     win = roll >= target
   if win:
-    msg = "%s wins %s on roll #%d! %.16g %s %.16g" % (nick, AmountToString(win_units), rolls, roll, "<=" if under else ">=", target)
+    msg = "%s wins %s on roll #%d! %.16g %s %.16g" % (link.user.nick, AmountToString(win_units), rolls, roll, "<=" if under else ">=", target)
   else:
-    msg = "%s loses %s on roll #%d. %.16g %s %.16g" % (nick, AmountToString(lose_units), rolls, roll, ">" if under else "<", target)
+    msg = "%s loses %s on roll #%d. %.16g %s %.16g" % (link.user.nick, AmountToString(lose_units), rolls, roll, ">" if under else "<", target)
 
   try:
-    RecordGameResult(nick,chan,"dice",win,not win,win_units if win else lose_units)
+    RecordGameResult(link,"dice",win,not win,win_units if win else lose_units)
   except:
     return
 
-  redis_hset("dice:rolls",nick,rolls)
+  redis_hset("dice:rolls",identity,rolls)
 
-  SendTo(sendto, "%s" % msg)
+  link.send("%s" % msg)
 
-def ShowDiceStats(sendto,snick,title):
-  return ShowGameStats(sendto,snick,title,"dice")
+def ShowDiceStats(link,sidentity,title):
+  return ShowGameStats(link,sidentity,title,"dice")
 
-def GetDiceStats(nick,chan,cmd):
-  sendto=GetSendTo(nick,chan)
-  snick = GetParam(cmd,1)
-  if snick and snick != nick:
-    if not IsAdmin(nick):
-      log_error('%s is not admin, cannot see dice stats for %s' % (nick, snick))
-      SendTo(sendto,'Access denied')
+def GetDiceStats(link,cmd):
+  identity=link.identity()
+  sidentity = GetParam(cmd,1)
+  if sidentity:
+    sidentity=IdentityFromString(link,sidentity)
+  if sidentity and sidentity != identity:
+    if not IsAdmin(link):
+      log_error('%s is not admin, cannot see dice stats for %s' % (identity, sidentity))
+      link.send('Access denied')
       return
   else:
-    snick=nick
-  ShowDiceStats(sendto,snick,snick)
-  ShowDiceStats(sendto,"reset:"+snick,'%s since reset' % snick)
-  ShowDiceStats(sendto,'','overall')
+    sidentity=identity
+  ShowDiceStats(link,sidentity,sidentity)
+  ShowDiceStats(link,"reset:"+sidentity,'%s since reset' % sidentity)
+  ShowDiceStats(link,'','overall')
 
-def ResetDiceStats(nick,chan,cmd):
-  sendto=GetSendTo(nick,chan)
-  snick = GetParam(cmd,1)
-  if snick and snick != nick:
-    if not IsAdmin(nick):
-      log_error('%s is not admin, cannot see dice stats for %s' % (nick, snick))
-      SendTo(sendto,'Access denied')
+def ResetDiceStats(link,cmd):
+  identity=link.identity()
+  sidentity = GetParam(cmd,1)
+  if sidentity:
+    sidentity=IdentityFromString(link,sidentity)
+  if sidentity and sidentity != identity:
+    if not IsAdmin(link):
+      log_error('%s is not admin, cannot see dice stats for %s' % (identity, sidentity))
+      link.send('Access denied')
       return
   else:
-    snick=nick
+    sidentity=identity
   try:
-    ResetGameStats(sendto,snick,"dice")
+    ResetGameStats(link,sidentity,"dice")
   except Exception,e:
-    SendTo(sendto,"An error occured")
+    link.send("An error occured")
 
-def PlayerSeed(nick,chan,cmd):
-  sendto=GetSendTo(nick,chan)
+def PlayerSeed(link,cmd):
+  identity=link.identity()
   fair_string = GetParam(cmd,1)
   if not fair_string:
-    SendTo(nick, "Usage: !playerseed <string>")
+    link.send("Usage: !playerseed <string>")
     return
   try:
-    SetPlayerSeed(nick,'dice',fair_string)
+    SetPlayerSeed(link,'dice',fair_string)
   except Exception,e:
-    log_error('Failed to save player seed for %s: %s' % (nick, str(e)))
-    SendTo(sendto, 'An error occured')
+    log_error('Failed to save player seed for %s: %s' % (identity, str(e)))
+    link.send('An error occured')
+  try:
+    ps = GetPlayerSeed(link,'dice')
+  except Exception,e:
+    log_error('Failed to retrieve newly set player seed for %s: %s' % (identity, str(e)))
+    link.send('An error occured')
+    return
+  link.send('Your new player seed is: %s' % ps)
 
-def FairCheck(nick,chan,cmd):
-  sendto=GetSendTo(nick,chan)
+def FairCheck(link,cmd):
+  identity=link.identity()
   try:
-    seed = GetServerSeed(nick,'dice')
+    seed = GetServerSeed(link,'dice')
   except Exception,e:
-    log_error('Failed to get server seed for %s: %s' % (nick,str(e)))
-    SendTo(seed,'An error has occured')
+    log_error('Failed to get server seed for %s: %s' % (identity,str(e)))
+    link.send('An error has occured')
     return
   try:
-    GenerateServerSeed(nick,'dice')
+    GenerateServerSeed(link,'dice')
   except Exception,e:
-    log_error('Failed to generate server seed for %s: %s' % (nick,str(e)))
-    SendTo(seed,'An error has occured')
+    log_error('Failed to generate server seed for %s: %s' % (identity,str(e)))
+    link.send('An error has occured')
     return
-  SendTo(sendto, 'Your server seed was %s - it has now been reset; see !fair for details' % str(seed))
+  link.send('Your server seed was %s - it has now been reset; see !fair for details' % str(seed))
 
-def Seeds(nick,chan,cmd):
-  sendto=GetSendTo(nick,chan)
+def Seeds(link,cmd):
+  identity=link.identity()
   try:
-    sh = GetServerSeedHash(nick,'dice')
-    ps = GetPlayerSeed(nick,'dice')
+    sh = GetServerSeedHash(link,'dice')
+    ps = GetPlayerSeed(link,'dice')
   except Exception,e:
-    log_error('Failed to get server seed for %s: %s' % (nick,str(e)))
-    SendTo(seed,'An error has occured')
+    log_error('Failed to get server seed for %s: %s' % (identity,str(e)))
+    link.send('An error has occured')
     return
-  SendTo(sendto, 'Your server seed hash is %s' % str(sh))
+  link.send('Your server seed hash is %s' % str(sh))
   if ps == "":
-    SendTo(sendto, 'Your have not set a player seed')
+    link.send('Your have not set a player seed')
   else:
-    SendTo(sendto, 'Your player seed hash is %s' % str(ps))
+    link.send('Your player seed hash is %s' % str(ps))
 
-def Fair(nick,chan,cmd):
-  SendTo(nick,"%s's dice betting is provably fair" % config.tipbot_name)
-  SendTo(nick,"Your rolls are determined by three pieces of information:")
-  SendTo(nick," - your server seed. You can see its hash with !seeds")
-  SendTo(nick," - your player seed. Empty by default, you can set it with !playerseed")
-  SendTo(nick," - the roll number, displayed with each bet you make")
-  SendTo(nick,"To verify past rolls were fair, use !faircheck")
-  SendTo(nick,"You will be given your server seed, and a new one will be generated")
-  SendTo(nick,"for future rolls. Then follow these steps:")
-  SendTo(nick,"Calculate the SHA-256 sum of serverseed:playerseed:rollnumber")
-  SendTo(nick,"Take the first 8 characters of this sum to make an hexadecimal")
-  SendTo(nick,"number, and divide it by 0x100000000. You will end up with a number")
-  SendTo(nick,"between 0 and 1 which was your roll for that particular bet")
-  SendTo(nick,"See !faircode for Python code implementing this check")
+def Fair(link,cmd):
+  link.send("%s's dice betting is provably fair" % config.tipbot_name)
+  link.send("Your rolls are determined by three pieces of information:")
+  link.send(" - your server seed. You can see its hash with !seeds")
+  link.send(" - your player seed. Empty by default, you can set it with !playerseed")
+  link.send(" - the roll number, displayed with each bet you make")
+  link.send("To verify past rolls were fair, use !faircheck")
+  link.send("You will be given your server seed, and a new one will be generated")
+  link.send("for future rolls. Then follow these steps:")
+  link.send("Calculate the SHA-256 sum of serverseed:playerseed:rollnumber")
+  link.send("Take the first 8 characters of this sum to make an hexadecimal")
+  link.send("number, and divide it by 0x100000000. You will end up with a number")
+  link.send("between 0 and 1 which was your roll for that particular bet")
+  link.send("See !faircode for Python code implementing this check")
 
-def FairCode(nick,chan,cmd):
-  SendTo(nick,"This Python 2 code takes the seeds and roll number and outputs the roll")
-  SendTo(nick,"for the corresponding game. Run it with three arguments: server seed,")
-  SendTo(nick,"player seed (use '' if you did not set any), and roll number.")
+def FairCode(link,cmd):
+  link.send("This Python 2 code takes the seeds and roll number and outputs the roll")
+  link.send("for the corresponding game. Run it with three arguments: server seed,")
+  link.send("player seed (use '' if you did not set any), and roll number.")
 
-  SendTo(nick,"import sys,hashlib,random")
-  SendTo(nick,"try:")
-  SendTo(nick,"  s=hashlib.sha256(sys.argv[1]+':'+sys.argv[2]+':'+sys.argv[3]).hexdigest()")
-  SendTo(nick,"  roll = float(long(s[0:8],base=16))/0x100000000")
-  SendTo(nick,"  print '%.16g' % roll")
-  SendTo(nick,"except:")
-  SendTo(nick,"  print 'need serverseed, playerseed, and roll number'")
+  link.send("import sys,hashlib,random")
+  link.send("try:")
+  link.send("  s=hashlib.sha256(sys.argv[1]+':'+sys.argv[2]+':'+sys.argv[3]).hexdigest()")
+  link.send("  roll = float(long(s[0:8],base=16))/0x100000000")
+  link.send("  print '%.16g' % roll")
+  link.send("except:")
+  link.send("  print 'need serverseed, playerseed, and roll number'")
 
-def DiceHelp(nick,chan):
-  SendTo(nick,"The dice module is a provably fair %s dice betting game" % coinspecs.name)
-  SendTo(nick,"Basic usage: !dice <amount> <multiplier> [over|under]")
-  SendTo(nick,"The goal is to get a roll under (or over, at your option) a target that depends")
-  SendTo(nick,"on your chosen profit multiplier (1 for even money)")
-  SendTo(nick,"See !fair and !faircode for a description of the provable fairness of the game")
-  SendTo(nick,"See !faircheck to get the server seed to check past rolls were fair")
+def DiceHelp(link):
+  link.send("The dice module is a provably fair %s dice betting game" % coinspecs.name)
+  link.send("Basic usage: !dice <amount> <multiplier> [over|under]")
+  link.send("The goal is to get a roll under (or over, at your option) a target that depends")
+  link.send("on your chosen profit multiplier (1 for even money)")
+  link.send("See !fair and !faircode for a description of the provable fairness of the game")
+  link.send("See !faircheck to get the server seed to check past rolls were fair")
 
 
 

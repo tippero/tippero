@@ -35,7 +35,7 @@ min_withdraw_amount = None # None defaults to the withdrawal fee
 withdrawal_mixin=0
 disable_withdraw_on_error = True
 
-admins = ["moneromooo", "moneromoo"]
+admins = ["freenode:moneromooo", "freenode:moneromoo"]
 
 # list of nicks to ignore for rains - bots, trolls, etc
 no_rain_to_nicks = []

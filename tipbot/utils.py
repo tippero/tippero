@@ -16,9 +16,9 @@ import httplib
 import tipbot.config as config
 import tipbot.coinspecs as coinspecs
 from tipbot.log import log_error, log_warn, log_info, log_log
-from tipbot.ircutils import *
 from tipbot.redisdb import *
 
+networks=[]
 
 def GetPassword():
   try:
@@ -40,19 +40,26 @@ def GetParam(parms,idx):
     return parms[idx]
   return None
 
-def GetPaymentID(nick):
+def GetPaymentID(link):
   salt="2u3g55bkwrui32fi3g4bGR$j5g4ugnujb-"+coinspecs.name+"-";
-  p = hashlib.sha256(salt+nick).hexdigest();
+  p = hashlib.sha256(salt+link.identity()).hexdigest();
   try:
-    redis_hset("paymentid",p,nick)
+    redis_hset("paymentid",p,link.identity())
   except Exception,e:
-    log_error('GetPaymentID: failed to set payment ID for %s to redis: %s' % (nick,str(e)))
+    log_error('GetPaymentID: failed to set payment ID for %s to redis: %s' % (link.identity(),str(e)))
   return p
 
-def GetNickFromPaymentID(p):
-  nick = redis_hget("paymentid",p)
-  log_log('PaymentID %s => %s' % (p, str(nick)))
-  return nick
+def GetIdentityFromPaymentID(p):
+  if not redis_hexists("paymentid",p):
+    log_log('PaymentID %s not found' % p)
+    return None
+  identity = redis_hget("paymentid",p)
+  log_log('PaymentID %s => %s' % (p, str(identity)))
+  # HACK - grandfathering pre-network payment IDs
+  if identity.index(':') == -1:
+    log_warn('Pre-network payment ID found, assuming freenode')
+    identity = "freenode:"+identity
+  return identity
 
 def IsValidAddress(address):
   if len(address) < coinspecs.address_length[0] or len(address) > coinspecs.address_length[1]:
@@ -204,4 +211,32 @@ def RetrieveTipbotBalance():
     raise RuntimeError("")
     return
   return balance, unlocked_balance
+
+def IdentityFromString(link,s):
+  if s.find(':') == -1:
+    network = link.network.name
+    nick=s
+  else:
+    parts=s.split(':')
+    network=parts[0]
+    nick=parts[1]
+  return network+':'+nick
+
+def NickFromIdentity(identity):
+  return identity.split(':')[1]
+
+def AddNetwork(network):
+  networks.append(network)
+
+def GetNetworkByName(name):
+  for network in networks:
+    if network.name==name:
+      return network
+  return None
+
+def GetNetworkByType(type):
+  for network in networks:
+    if isinstance(network,type):
+      return network
+  return None
 

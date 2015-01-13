@@ -23,184 +23,183 @@ import tipbot.config as config
 from tipbot.log import log_error, log_warn, log_info, log_log
 import tipbot.coinspecs as coinspecs
 from tipbot.utils import *
-from tipbot.ircutils import *
 from tipbot.command_manager import *
 from tipbot.redisdb import *
 
 pending_confirmations=dict()
 
-def PerformTip(nick,chan,who,units):
-  sendto=GetSendTo(nick,chan)
+def PerformTip(link,whoid,units):
+  identity=link.identity()
   try:
-    balance = redis_hget("balances",nick)
+    balance = redis_hget("balances",identity)
     if balance == None:
       balance = 0
     balance=long(balance)
     if units > balance:
-      SendTo(sendto, "You only have %s" % (AmountToString(balance)))
+      link.send("You only have %s" % (AmountToString(balance)))
       return
-    log_info('Tip: %s tipping %s %u units, with balance %u' % (nick, who, units, balance))
+    log_info('Tip: %s tipping %s %u units, with balance %u' % (identity, whoid, units, balance))
     try:
       p = redis_pipeline()
       p.incrby("tips_total_count",1);
       p.incrby("tips_total_amount",units);
-      p.hincrby("tips_count",nick,1);
-      p.hincrby("tips_amount",nick,units);
-      p.hincrby("balances",nick,-units);
-      p.hincrby("balances",who,units)
+      p.hincrby("tips_count",identity,1);
+      p.hincrby("tips_amount",identity,units);
+      p.hincrby("balances",identity,-units);
+      p.hincrby("balances",whoid,units)
       p.execute()
-      SendTo(sendto,"%s has tipped %s %s" % (nick, who, AmountToString(units)))
+      link.send("%s has tipped %s %s" % (NickFromIdentity(identity), NickFromIdentity(whoid), AmountToString(units)))
     except Exception, e:
       log_error("Tip: Error updating redis: %s" % str(e))
-      SendTo(sendto, "An error occured")
+      link.send("An error occured")
       return
   except Exception, e:
     log_error('Tip: exception: %s' % str(e))
-    SendTo(sendto, "An error has occured")
+    link.send("An error has occured")
 
-def Tip(nick,chan,cmd):
-  userstable = GetUsersTable()
-
-  sendto=GetSendTo(nick,chan)
+def Tip(link,cmd):
+  identity=link.identity()
   try:
     who=cmd[1]
     amount=float(cmd[2])
   except Exception,e:
-    SendTo(sendto, "Usage: tip nick amount")
+    link.send("Usage: tip nick amount")
     return
   units=long(amount*coinspecs.atomic_units)
   if units <= 0:
-    SendTo(sendto, "Invalid amount")
+    link.send("Invalid amount")
     return
 
-  log_info("Tip: %s wants to tip %s %s" % (nick, who, AmountToString(units)))
-  if chan in userstable:
-    log_info('getting keys')
-    userlist = userstable[chan].keys()
-    log_info('testingwho')
-    if not who in userlist:
-      SendTo(sendto,"%s is not in %s: if you really intend to tip %s, type !confirmtip before tipping again" % (who, chan, who))
-      pending_confirmations[nick]={'who': who, 'units': units}
+  whoid = IdentityFromString(link,who)
+
+  log_info("Tip: %s wants to tip %s %s" % (identity, whoid, AmountToString(units)))
+  if link.group:
+    userlist=[user.identity() for user in link.network.get_users(link.group.name)]
+    log_log('users: %s' % str(userlist))
+    if not whoid in userlist:
+      link.send("%s is not in %s: if you really intend to tip %s, type !confirmtip before tipping again" % (who, link.group.name, who))
+      pending_confirmations[identity]={'who': whoid, 'units': units}
       return
-  log_info('delk')
-  pending_confirmations.pop(nick,None)
-  PerformTip(nick,chan,who,units)
+  pending_confirmations.pop(identity,None)
+  PerformTip(link,whoid,units)
 
-def ConfirmTip(nick,chan,cmd):
-  sendto=GetSendTo(nick,chan)
-  if not nick in pending_confirmations:
-    SendTo(sendto,"%s has no tip waiting confirmation" % nick)
+def ConfirmTip(link,cmd):
+  identity=link.identity()
+  if not identity in pending_confirmations:
+    link.send("%s has no tip waiting confirmation" % NickFromIdentity(identity))
     return
-  who=pending_confirmations[nick]['who']
-  units=pending_confirmations[nick]['units']
-  pending_confirmations.pop(nick,None)
-  PerformTip(nick,chan,who,units)
+  whoid=pending_confirmations[identity]['who']
+  units=pending_confirmations[identity]['units']
+  pending_confirmations.pop(identity,None)
+  PerformTip(link,whoid,units)
 
-def Rain(nick,chan,cmd):
-  userstable = GetUsersTable()
+def Rain(link,cmd):
+  identity=link.identity()
 
-  if chan[0] != '#':
-    SendTo(nick, "Raining can only be done in a channel")
+  group=link.group
+  if not group:
+    link.send("Raining can only be done in a group")
     return
 
   try:
     amount=float(cmd[1])
   except Exception,e:
-    SendTo(chan, "Usage: rain amount [users]")
+    link.send("Usage: rain amount [users]")
     return
   users = GetParam(cmd,2)
   if users:
     try:
       users=long(users)
     except Exception,e:
-      SendTo(chan, "Usage: rain amount [users]")
+      link.send("Usage: rain amount [users]")
       return
 
   if amount <= 0:
-    SendTo(chan, "Usage: rain amount [users]")
+    link.send("Usage: rain amount [users]")
     return
   if users != None and users <= 0:
-    SendTo(chan, "Usage: rain amount [users]")
+    link.send("Usage: rain amount [users]")
     return
   units = long(amount * coinspecs.atomic_units)
 
   try:
-    balance = redis_hget("balances",nick)
+    balance = redis_hget("balances",identity)
     if balance == None:
       balance = 0
     balance=long(balance)
     if units > balance:
-      SendTo(chan, "You only have %s" % (AmountToString(balance)))
+      link.send("You only have %s" % (AmountToString(balance)))
       return
 
-    log_log("userstable: %s" % str(userstable))
-    userlist = userstable[chan].keys()
-    userlist.remove(nick)
+    userlist=[user.identity() for user in link.network.get_users(group.name)]
+    log_log("users in %s: %s" % (group.name,str(userlist)))
+    userlist.remove(identity)
     for n in config.no_rain_to_nicks:
-      userlist.remove(n)
+      userlist.remove(IdentityFromString(link,n))
     if users == None or users > len(userlist):
       users = len(userlist)
       everyone = True
     else:
       everyone = False
     if users == 0:
-      SendTo(chan, "Nobody eligible for rain")
+      link.send("Nobody eligible for rain")
       return
     if units < users:
-      SendTo(chan, "This would mean not even an atomic unit per nick")
+      link.send("This would mean not even an atomic unit per nick")
       return
-    log_info("%s wants to rain %s on %s users in %s" % (nick, AmountToString(units), users, chan))
-    log_log("users in %s: %s" % (chan, str(userlist)))
+    log_info("%s wants to rain %s on %s users in %s" % (identity, AmountToString(units), users, group.name))
+    log_log("eligible users in %s: %s" % (group.name, str(userlist)))
     random.shuffle(userlist)
     userlist = userlist[0:users]
-    log_log("selected users in %s: %s" % (chan, userlist))
+    log_log("selected users in %s: %s" % (group.name, userlist))
     user_units = long(units / users)
 
     enumerate_users = False
     if everyone:
-      msg = "%s rained %s on everyone in the channel" % (nick, AmountToString(user_units))
+      msg = "%s rained %s on everyone in the channel" % (link.user.nick, AmountToString(user_units))
     elif len(userlist) > 16:
-      msg = "%s rained %s on %d nicks" % (nick, AmountToString(user_units), len(userlist))
+      msg = "%s rained %s on %d nicks" % (link.user.nick, AmountToString(user_units), len(userlist))
     else:
-      msg = "%s rained %s on:" % (nick, AmountToString(user_units))
+      msg = "%s rained %s on:" % (link.user.nick, AmountToString(user_units))
       enumerate_users = True
     pipe = redis_pipeline()
-    pipe.hincrby("balances",nick,-units)
-    pipe.incrby("rain_total_count",1);
-    pipe.incrby("rain_total_amount",units);
-    pipe.hincrby("rain_count",nick,1);
-    pipe.hincrby("rain_amount",nick,units);
+    pipe.hincrby("balances",identity,-units)
+    pipe.incrby("rain_total_count",1)
+    pipe.incrby("rain_total_amount",units)
+    pipe.hincrby("rain_count",identity,1)
+    pipe.hincrby("rain_amount",identity,units)
     for user in userlist:
       pipe.hincrby("balances",user,user_units)
       if enumerate_users:
-        msg = msg + " " + user
+        msg = msg + " " + NickFromIdentity(user)
     pipe.execute()
-    SendTo(chan, "%s" % msg)
+    link.send("%s" % msg)
 
   except Exception,e:
     log_error('Rain: exception: %s' % str(e))
-    SendTo(chan, "An error has occured")
+    link.send("An error has occured")
     return
 
-def RainActive(nick,chan,cmd):
-  userstable = GetUsersTable()
+def RainActive(link,cmd):
+  identity=link.identity()
 
   amount=GetParam(cmd,1)
   hours=GetParam(cmd,2)
   minfrac=GetParam(cmd,3)
 
-  if chan[0] != '#':
-    SendTo(nick, "Raining can only be done in a channel")
+  group=link.group
+  if not group:
+    link.send("Raining can only be done in a channel")
     return
   if not amount or not hours:
-    SendTo(chan, "usage: !rainactive <amount> <hours> [<minfrac>]")
+    link.send("usage: !rainactive <amount> <hours> [<minfrac>]")
     return
   try:
     amount=float(amount)
     if amount <= 0:
       raise RuntimeError("")
   except Exception,e:
-    SendTo(chan, "Invalid amount")
+    link.send("Invalid amount")
     return
   try:
     hours=float(hours)
@@ -208,7 +207,7 @@ def RainActive(nick,chan,cmd):
       raise RuntimeError("")
     seconds = hours * 3600
   except Exception,e:
-    SendTo(chan, "Invalid hours")
+    link.send("Invalid hours")
     return
   if minfrac:
     try:
@@ -216,7 +215,7 @@ def RainActive(nick,chan,cmd):
       if minfrac < 0 or minfrac > 1:
         raise RuntimeError("")
     except Exception,e:
-      SendTo(chan, "minfrac must be a number between 0 and 1")
+      link.send("minfrac must be a number between 0 and 1")
       return
   else:
     minfrac = 0
@@ -224,23 +223,26 @@ def RainActive(nick,chan,cmd):
   units = long(amount * coinspecs.atomic_units)
 
   try:
-    balance = redis_hget("balances",nick)
+    balance = redis_hget("balances",identity)
     if balance == None:
       balance = 0
     balance=long(balance)
     if units > balance:
-      SendTo(chan, "You only have %s" % (AmountToString(balance)))
+      link.send("You only have %s" % (AmountToString(balance)))
       return
 
     now = time.time()
-    userlist = userstable[chan].keys()
-    userlist.remove(nick)
+    userlist = [user.identity() for user in link.network.get_active_users(seconds,group.name)]
+    log_log('userlist: %s' % str(userlist))
+    userlist.remove(link.identity())
     for n in config.no_rain_to_nicks:
-      userlist.remove(n)
+      userlist.remove(IdentityFromString(link,n))
     weights=dict()
     weight=0
+    log_log('userlist to loop: %s' % str(userlist))
     for n in userlist:
-      t = userstable[chan][n]
+      log_log('user to check: %s' % NickFromIdentity(n))
+      t = link.network.get_last_active_time(NickFromIdentity(n),group.name)
       if t == None:
         continue
       dt = now - t
@@ -250,15 +252,15 @@ def RainActive(nick,chan,cmd):
         weight += w
 
     if len(weights) == 0:
-      SendTo(chan, "Nobody eligible for rain")
+      link.send("Nobody eligible for rain")
       return
 
     pipe = redis_pipeline()
-    pipe.hincrby("balances",nick,-units)
+    pipe.hincrby("balances",identity,-units)
     pipe.incrby("arain_total_count",1);
     pipe.incrby("arain_total_amount",units);
-    pipe.hincrby("arain_count",nick,1);
-    pipe.hincrby("arain_amount",nick,units);
+    pipe.hincrby("arain_count",identity,1);
+    pipe.hincrby("arain_amount",identity,units);
     rained_units = 0
     nnicks = 0
     minu=None
@@ -267,7 +269,8 @@ def RainActive(nick,chan,cmd):
       user_units = long(units * weights[n] / weight)
       if user_units <= 0:
         continue
-      log_info("%s rained %s on %s (last active %f hours ago)" % (nick, AmountToString(user_units),n,GetTimeSinceActive(chan,n)/3600))
+      act = now - link.network.get_last_active_time(NickFromIdentity(n),link.group.name)
+      log_info("%s rained %s on %s (last active %f hours ago)" % (identity, AmountToString(user_units),n,act/3600))
       pipe.hincrby("balances",n,user_units)
       rained_units += user_units
       if not minu or user_units < minu:
@@ -277,23 +280,23 @@ def RainActive(nick,chan,cmd):
       nnicks = nnicks+1
 
     if maxu == None:
-      SendTo(chan, "This would mean not even an atomic unit per nick")
+      link.send("This would mean not even an atomic unit per nick")
       return
 
     pipe.execute()
-    log_info("%s rained %s - %s (total %s, acc %s) on the %d nicks active in the last %s" % (nick, AmountToString(minu), AmountToString(maxu), AmountToString(units), AmountToString(rained_units), nnicks, TimeToString(seconds)))
-    SendTo(chan, "%s rained %s - %s on the %d nicks active in the last %s" % (nick, AmountToString(minu), AmountToString(maxu), nnicks, TimeToString(seconds)))
+    log_info("%s rained %s - %s (total %s, acc %s) on the %d nicks active in the last %f hours" % (identity, AmountToString(minu), AmountToString(maxu), AmountToString(units), AmountToString(rained_units), nnicks, TimeToString(seconds)))
+    link.send("%s rained %s - %s on the %d nicks active in the last %f hours" % (identity, AmountToString(minu), AmountToString(maxu), nnicks, TimeToString(seconds)))
 
   except Exception,e:
     log_error('Rain: exception: %s' % str(e))
-    SendTo(chan, "An error has occured")
+    link.send("An error has occured")
     return
 
-def Help(nick,chan):
-  SendTo(nick,'You can tip other people, or rain %s on them' % coinspecs.name)
-  SendTo(nick,'!tip tips a single person, while !rain shares equally between people in the channel')
-  SendTo(nick,'!rainactive tips all within the last N hours, with more recently active people')
-  SendTo(nick,'getting a larger share.')
+def Help(link):
+  link.send('You can tip other people, or rain %s on them' % coinspecs.name)
+  link.send('!tip tips a single person, while !rain shares equally between people in the channel')
+  link.send('!rainactive tips all within the last N hours, with more recently active people')
+  link.send('getting a larger share.')
 
 
 RegisterModule({

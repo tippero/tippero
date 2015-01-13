@@ -41,76 +41,82 @@ def IsBetAmountValid(amount,minbet,maxbet,potential_loss,max_loss,max_loss_ratio
 
   return True, None
 
-def IsPlayerBalanceAtLeast(nick,units):
+def IsPlayerBalanceAtLeast(link,units):
   try:
-    balance = redis_hget("balances",nick)
+    balance = redis_hget("balances",link.identity())
     if balance == None:
       balance = 0
     balance=long(balance)
     if units > balance:
-      log_error ('%s does not have enough balance' % nick)
+      log_error ('%s does not have enough balance' % link.user.nick)
       return False, "You only have %s" % (AmountToString(balance))
   except Exception,e:
     log_error ('failed to query balance')
     return False, "Failed to query balance"
   return True, None
 
-def SetServerSeed(nick,game,seed):
+def SetServerSeed(link,game,seed):
+  identity=link.identity()
   try:
-    redis_hset('%s:serverseed' % game,nick,seed)
-    log_info('%s\'s %s server seed set' % (nick, game))
+    redis_hset('%s:serverseed' % game,identity,seed)
+    log_info('%s\'s %s serverseed set' % (identity, game))
   except Exception,e:
-    log_error('Failed to set %s server seed for %s: %s' % (game, nick, str(e)))
+    log_error('Failed to set %s server seed for %s: %s' % (game, identity, str(e)))
     raise
 
-def GetServerSeed(nick,game):
-  EnsureServerSeed(nick,game)
+def GetServerSeed(link,game):
+  EnsureServerSeed(link,game)
+  identity=link.identity()
   try:
-    return redis_hget('%s:serverseed' % game,nick)
+    return redis_hget('%s:serverseed' % game,identity)
   except Exception,e:
-    log_error('Failed to get %s server seed for %s: %s' % (game, nick, str(e)))
+    log_error('Failed to get %s server seed for %s: %s' % (game, identity, str(e)))
     raise
 
-def GenerateServerSeed(nick,game):
+def GenerateServerSeed(link,game):
+  identity=link.identity()
   try:
     salt="kfn3kjg4nkngvekjvn3u4vgb" + ":" + game
-    s=salt+":"+nick+":"+str(time.time())+":"+str(random.randint(0,1000000))
+    s=salt+":"+identity+":"+str(time.time())+":"+str(random.randint(0,1000000))
     seed=hashlib.sha256(s).hexdigest()
-    SetServerSeed(nick,game,seed)
+    SetServerSeed(link,game,seed)
   except Exception,e:
-    log_error('Failed to generate %s server seed for %s: %s' % (game,nick,str(e)))
+    log_error('Failed to generate %s server seed for %s: %s' % (game,identity,str(e)))
     raise
 
-def EnsureServerSeed(nick,game):
-  if not redis_hexists('%s:serverseed' % game,nick):
-    GenerateServerSeed(nick,game)
+def EnsureServerSeed(link,game):
+  if not redis_hexists('%s:serverseed' % game,link.identity()):
+    GenerateServerSeed(link,game)
 
-def SetPlayerSeed(nick,game,seed):
+def SetPlayerSeed(link,game,seed):
+  identity=link.identity()
   try:
-    redis_hset('%s:playerseed' % game,nick,seed)
-    log_info('%s\'s %s playerseed set to %s' % (nick, game, seed))
+    redis_hset('%s:playerseed' % game,identity,seed)
+    log_info('%s\'s %s playerseed set to %s' % (identity, game, seed))
   except Exception,e:
-    log_error('Failed to set %s player seed for %s: %s' % (game, nick, str(e)))
+    log_error('Failed to set %s player seed for %s: %s' % (game, identity, str(e)))
     raise
 
-def GetPlayerSeed(nick,game):
+def GetPlayerSeed(link,game):
+  identity=link.identity()
   try:
-    if not redis_hexists('%s:playerseed' % game,nick):
+    if not redis_hexists('%s:playerseed' % game,identity):
       return ""
-    return redis_hget('%s:playerseed' % game,nick)
+    return redis_hget('%s:playerseed' % game,identity)
   except Exception,e:
-    log_error('Failed to get %s player seed for %s: %s' % (game, nick, str(e)))
+    log_error('Failed to get %s player seed for %s: %s' % (game, identity, str(e)))
     raise
 
-def GetServerSeedHash(nick,game):
-  seed = GetServerSeed(nick,game)
+def GetServerSeedHash(link,game):
+  seed = GetServerSeed(link,game)
   return hashlib.sha256(seed).hexdigest()
 
-def RecordGameResult(nick,chan,game,win,lose,units):
+def RecordGameResult(link,game,win,lose,units):
+  identity=link.identity()
   try:
     p = redis_pipeline()
-    tname="%s:stats:"%game+nick
-    rtname="%s:stats:reset:"%game+nick
+    tname="%s:stats:"%game+identity
+    rtname="%s:stats:reset:"%game+identity
     alltname="%s:stats:"%game
     p.hincrby(tname,"bets",1)
     p.hincrby(rtname,"bets",1)
@@ -119,7 +125,7 @@ def RecordGameResult(nick,chan,game,win,lose,units):
     p.hincrby(rtname,"wagered",units)
     p.hincrby(alltname,"wagered",units)
     if win:
-      p.hincrby("balances",nick,units)
+      p.hincrby("balances",identity,units)
       p.hincrby(tname,"won",units)
       p.hincrby(rtname,"won",units)
       p.hincrby(alltname,"won",units)
@@ -127,7 +133,7 @@ def RecordGameResult(nick,chan,game,win,lose,units):
       p.hincrby(rtname,"nwon",1)
       p.hincrby(alltname,"nwon",1)
     if lose:
-      p.hincrby("balances",nick,-units)
+      p.hincrby("balances",identity,-units)
       p.hincrby(tname,"lost",units)
       p.hincrby(rtname,"lost",units)
       p.hincrby(alltname,"lost",units)
@@ -139,8 +145,9 @@ def RecordGameResult(nick,chan,game,win,lose,units):
     log_error('RecordGameResult: exception updating redis: %s' % str(e))
     raise
 
-def ShowGameStats(sendto,snick,title,game):
-  tname="%s:stats:"%game+snick
+def ShowGameStats(link,sidentity,title,game):
+  identity=IdentityFromString(link,sidentity)
+  tname="%s:stats:"%game+sidentity
   try:
     bets=redis_hget(tname,"bets")
     wagered=redis_hget(tname,"wagered")
@@ -150,10 +157,10 @@ def ShowGameStats(sendto,snick,title,game):
     nlost=redis_hget(tname,"nlost")
   except Exception,e:
     log_error('Failed to retrieve %s stats for %s: %s' % (game, title, str(e)))
-    SendTo(sendto,"An error occured")
+    link.send("An error occured")
     return
   if not bets:
-    SendTo(sendto,"No %s stats available for %s" % (game,title))
+    link.send("No %s stats available for %s" % (game,title))
     return
 
   bets = long(bets)
@@ -164,7 +171,7 @@ def ShowGameStats(sendto,snick,title,game):
   nlost = long(nlost or 0)
 
   if bets==0:
-    SenTo(sendto,"No %s stats available for %s" % (game,title))
+    link.send("No %s stats available for %s" % (game,title))
     return
 
   swagered = AmountToString(wagered)
@@ -175,12 +182,13 @@ def ShowGameStats(sendto,snick,title,game):
     sov = "+" + AmountToString(won-lost)
   else:
     sov = "-" + AmountToString(lost-won)
-  SendTo(sendto,"%s: %d games %d won, %d lost, %s wagered (average %s per game), %s won, %s lost, overall %s" % (title, bets, nwon, nlost, swagered, savg, swon, slost, sov))
+  link.send("%s: %d games %d won, %d lost, %s wagered (average %s per game), %s won, %s lost, overall %s" % (title, bets, nwon, nlost, swagered, savg, swon, slost, sov))
 
-def ResetGameStats(sendto,snick,game):
+def ResetGameStats(link,sidentity,game):
+  identity=IdentityFromString(link,sidentity)
   try:
     p = redis_pipeline()
-    tname="%s:stats:reset:"%game+snick
+    tname="%s:stats:reset:"%game+sidentity
     bets=p.hset(tname,"bets",0)
     wagered=p.hset(tname,"wagered",0)
     won=p.hset(tname,"won",0)
@@ -188,31 +196,31 @@ def ResetGameStats(sendto,snick,game):
     nwon=p.hset(tname,"nwon",0)
     nlost=p.hset(tname,"nlost",0)
     p.execute()
-    SendTo(sendto,"%s stats reset for %s" % (game,snick))
+    link.send("%s stats reset for %s" % (game,sidentity))
   except Exception,e:
-    log_error('Error resetting %s stats for %s: %s' % (game,snick,str(e)))
+    log_error('Error resetting %s stats for %s: %s' % (game,sidentity,str(e)))
     raise
 
 def RetrieveHouseBalance():
   balance, unlocked_balance = RetrieveTipbotBalance()
 
-  nicks = redis_hgetall("balances")
-  for nick in nicks:
-    nb = redis_hget("balances", nick)
-    unlocked_balance = unlocked_balance - long(nb)
-    log_log('RetrieveHouseBalance: subtracting %s from %s to give %s' % (AmountToString(nb), nick, AmountToString(unlocked_balance)))
+  identities = redis_hgetall("balances")
+  for identity in identities:
+    ib = redis_hget("balances", identity)
+    unlocked_balance = unlocked_balance - long(ib)
+    log_log('RetrieveHouseBalance: subtracting %s from %s to give %s' % (AmountToString(ib), identity, AmountToString(unlocked_balance)))
 
   rbal=redis_get('reserve_balance')
   if rbal:
     unlocked_balance = unlocked_balance - long(rbal)
+    log_log('RetrieveHouseBalance: subtracting %s reserve balance to give %s' % (AmountToString(rbal), AmountToString(unlocked_balance)))
 
   if unlocked_balance < 0:
     raise RuntimeError('Negative house balance')
     return
   return unlocked_balance
 
-def ReserveBalance(nick,chan,cmd):
-  sendto=GetSendTo(nick,chan)
+def ReserveBalance(link,cmd):
   rbal=GetParam(cmd,1)
   if rbal:
     try:
@@ -222,36 +230,36 @@ def ReserveBalance(nick,chan,cmd):
       rbal = long(rbal * coinspecs.atomic_units)
     except Exception,e:
       log_error('SetReserveBalance: invalid balance: %s' % str(e))
-      SendTo(sendto,"Invalid balance")
+      link.send("Invalid balance")
       return
 
   try:
     current_rbal=long(redis_get('reserve_balance') or 0)
   except Exception,e:
     log_error('Failed to get current reserve balance: %s' % str(e))
-    SendTo(sendto,"Failed to get current reserve balance")
+    link.send("Failed to get current reserve balance")
     return
   if rbal == None:
-    SendTo(sendto,"Reserve balance is %s" % AmountToString(current_rbal))
+    link.send("Reserve balance is %s" % AmountToString(current_rbal))
     return
 
   try:
     house_balance = RetrieveHouseBalance()
   except Exception,e:
     log_error('Failed to get house balance: %s' % str(e))
-    SendTo(sendto,"Failed to get house balance")
+    link.send("Failed to get house balance")
     return
   if rbal > house_balance + current_rbal:
     log_error('Cannot set reserve balance higher than max house balance')
-    SendTo(sendto,'Cannot set reserve balance higher than max house balance')
+    link.send('Cannot set reserve balance higher than max house balance')
     return
   try:
     redis_set('reserve_balance',rbal)
   except Exception,e:
     log_error('Failed to set reserve balance: %s' % str(e))
-    SendTo(sendto,"Failed to set reserve balance")
+    link.send("Failed to set reserve balance")
     return
-  SendTo(sendto,"Reserve balance set")
+  link.send("Reserve balance set")
 
 RegisterCommand({
   'module': 'betting',

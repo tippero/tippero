@@ -35,10 +35,7 @@ def GetTipbotAddress():
     log_error("GetTipbotAddress: Error retrieving %s's address: %s" % (config.tipbot_name, str(e)))
     return "ERROR"
 
-def UpdateCoin(param):
-  irc = param[0]
-  redisdb = param[1]
-
+def UpdateCoin(data):
   global last_wallet_update_time
   if last_wallet_update_time == None:
     last_wallet_update_time = 0
@@ -87,11 +84,13 @@ def UpdateCoin(param):
             tx_hash=p["tx_hash"]
             amount=p["amount"]
             try:
-              recipient = GetNickFromPaymentID(payment_id)
+              recipient = GetIdentityFromPaymentID(payment_id)
+              if not recipient:
+                raise RuntimeError('Payment ID %s not found' % payment_id)
               log_info('UpdateCoin: Found payment %s to %s for %s' % (tx_hash,recipient, AmountToString(amount)))
               pipe.hincrby("balances",recipient,amount);
             except Exception,e:
-              log_error('UpdateCoin: No nick found for payment id %s, tx hash %s, amount %s' % (payment_id, tx_hash, amount))
+              log_error('UpdateCoin: No identity found for payment id %s, tx hash %s, amount %s: %s' % (payment_id, tx_hash, amount, str(e)))
           log_log('UpdateCoin: Executing received payments pipeline')
           pipe.execute()
         except Exception,e:
@@ -104,13 +103,13 @@ def UpdateCoin(param):
     log_error('UpdateCoin: Failed to get bulk payments: %s' % str(e))
   last_wallet_update_time = time.time()
 
-def Deposit(nick,chan,cmd):
-  Help(nick,chan)
+def Deposit(link,cmd):
+  Help(link)
 
-def Help(nick,chan):
-  SendTo(nick, "You can send %s to your account:" % coinspecs.name);
-  SendTo(nick, "  Address: %s" % GetTipbotAddress())
-  SendTo(nick, "  Payment ID: %s" % GetPaymentID(nick))
+def Help(link):
+  link.send("You can send %s to your account:" % coinspecs.name);
+  link.send("  Address: %s" % GetTipbotAddress())
+  link.send("  Payment ID: %s" % GetPaymentID(link))
 
 RegisterModule({
   'name': __name__,

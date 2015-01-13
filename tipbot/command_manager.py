@@ -11,7 +11,6 @@
 
 import tipbot.config as config
 from tipbot.utils import *
-from tipbot.ircutils import *
 
 modules = dict()
 commands = dict()
@@ -19,48 +18,46 @@ calltable=dict()
 idles = []
 cleanup = dict()
 
-def SendToProxy(nick,chan,msg):
-  SendTo(GetSendTo(nick,chan),msg)
+def SendToProxy(link,msg):
+  link.send(msg)
 
-def RunRegisteredCommand(nick,chan,ifyes,yesdata,ifno,nodata):
-  if nick not in calltable:
-    calltable[nick] = []
-  calltable[nick].append([chan,ifyes,yesdata,ifno,nodata])
-  if nick in registered_users:
-    RunNextCommand(nick,True)
+def RunRegisteredCommand(link,ifyes,yesdata,ifno,nodata):
+  if link.identity() not in calltable:
+    calltable[link.identity()] = []
+  calltable[link.identity()].append([link,ifyes,yesdata,ifno,nodata])
+  if link.network.is_identified(link):
+    RunNextCommand(link,True)
   else:
-    SendTo('nickserv', "ACC " + nick)
+    link.network.identify(link)
 
-def IsAdmin(nick):
-  return nick in config.admins
+def IsAdmin(link):
+  return link.identity() in config.admins
 
-def RunAdminCommand(nick,chan,ifyes,yesdata,ifno,nodata):
-  if not IsAdmin(nick):
-    log_warn('RunAdminCommand: nick %s is not admin, cannot call %s with %s' % (str(nick),str(ifyes),str(yesdata)))
-    SendTo(nick, "Access denied")
+def RunAdminCommand(link,ifyes,yesdata,ifno,nodata):
+  if not IsAdmin(link):
+    log_warn('RunAdminCommand: %s is not admin, cannot call %s with %s' % (str(link.identity()),str(ifyes),str(yesdata)))
+    link.send("Access denied")
     return
-  RunRegisteredCommand(nick,chan,ifyes,yesdata,ifno,nodata)
+  RunRegisteredCommand(link,ifyes,yesdata,ifno,nodata)
 
-def RunNextCommand(nick,registered):
-  if registered:
-    registered_users.add(nick)
-  else:
-    registered_users.discard(nick)
-  if nick not in calltable:
-    log_error( 'Nothing in queue for %s' % nick)
+def RunNextCommand(link,registered):
+  identity = link.identity()
+  if identity not in calltable:
+    log_error('Nothing in queue for %s' % identity)
     return
   try:
+    link=calltable[identity][0][0]
     if registered:
-      calltable[nick][0][1](nick,calltable[nick][0][0],calltable[nick][0][2])
+      calltable[identity][0][1](link,calltable[identity][0][2])
     else:
-      calltable[nick][0][3](nick,calltable[nick][0][0],calltable[nick][0][4])
-    del calltable[nick][0]
+      calltable[identity][0][3](link,calltable[identity][0][4])
+    del calltable[identity][0]
   except Exception, e:
     log_error('RunNextCommand: Exception in action, continuing: %s' % str(e))
-    del calltable[nick][0]
+    del calltable[identity][0]
 
-def Commands(nick,chan,cmd):
-  if IsAdmin(nick):
+def Commands(link,cmd):
+  if IsAdmin(link):
     all = True
   else:
     all = False
@@ -68,9 +65,9 @@ def Commands(nick,chan,cmd):
   module_name = GetParam(cmd,1)
 
   if module_name:
-    SendTo(nick, "Commands for %s's %s module:" % (config.tipbot_name,module_name))
+    link.send_private("Commands for %s's %s module:" % (config.tipbot_name,module_name))
   else:
-    SendTo(nick, "Commands for %s (use !commands <modulename> for help about the module's commands):" % config.tipbot_name)
+    link.send_private("Commands for %s (use !commands <modulename> for help about the module's commands):" % config.tipbot_name)
 
   msgs = dict()
   for command_name in commands:
@@ -84,7 +81,7 @@ def Commands(nick,chan,cmd):
         synopsis = c['name']
         if 'parms' in c:
           synopsis = synopsis + " " + c['parms']
-        SendTo(nick, "%s - %s" % (synopsis, c['help']))
+        link.send_private("%s - %s" % (synopsis, c['help']))
       else:
         if module in msgs:
           msgs[module] = msgs[module] +(", ")
@@ -94,7 +91,7 @@ def Commands(nick,chan,cmd):
 
   if not module_name:
     for msg in msgs:
-      SendTo(nick, "%s" % msgs[msg])
+      link.send_private("%s" % msgs[msg])
 
 def RegisterModule(module):
   if module['name'] in modules:
@@ -131,7 +128,7 @@ def RegisterIdleFunction(module,function):
 def RegisterCleanupFunction(module,function):
   cleanup.append((module,function))
 
-def OnCommand(cmd,chan,who,check_admin,check_registered):
+def OnCommand(link,cmd,check_admin,check_registered):
   cmdparts = cmd[0].split(':')
   log_log('cmdparts: %s' % str(cmdparts))
   if len(cmdparts) == 2:
@@ -141,7 +138,7 @@ def OnCommand(cmd,chan,who,check_admin,check_registered):
     modulename = None
     cmdname = cmdparts[0]
   else:
-    SendTo(GetNick(who), "Invalid command, try !help")
+    link.send("Invalid command, try !help")
     return
   log_log('modulename: %s, cmdname: %s' % (str(modulename),str(cmdname)))
   if cmdname in commands:
@@ -153,7 +150,7 @@ def OnCommand(cmd,chan,who,check_admin,check_registered):
           if msg != "":
             msg = msg + ", "
           msg = msg + c['module'] + ":" + cmd[0]
-        SendTo(GetNick(who), "Ambiguous command, try one of: %s" % msg)
+        link.send("Ambiguous command, try one of: %s" % msg)
         return
       c = None
       for command in commands[cmdname]:
@@ -161,34 +158,34 @@ def OnCommand(cmd,chan,who,check_admin,check_registered):
           c = command
           break
       if not c:
-        SendTo(GetNick(who), "Invalid command, try !help")
+        link.send("Invalid command, try !help")
         return
     else:
       c = commands[cmdname][0]
     if 'admin' in c and c['admin']:
-      check_admin(GetNick(who),chan,c['function'],cmd,SendToProxy,"You must be admin")
+      check_admin(link,c['function'],cmd,SendToProxy,"You must be admin")
     elif 'registered' in c and c['registered']:
-      check_registered(GetNick(who),chan,c['function'],cmd,SendToProxy,"You must be registered with Freenode")
+      check_registered(link,c['function'],cmd,SendToProxy,"You must be registered with Freenode")
     else:
-      c['function'](GetNick(who),chan,cmd)
+      c['function'](link,cmd)
   else:
-    SendTo(GetNick(who), "Invalid command, try !help")
+    link.send("Invalid command, try !help")
 
-def RunIdleFunctions(param):
+def RunIdleFunctions(param=None):
   for f in idles:
     try:
       f[1](param)
     except Exception,e:
       log_error("Exception running idle function %s from module %s: %s" % (str(f[1]),str(f[2]),str(e)))
 
-def RunModuleHelpFunction(module,nick,chan):
+def RunModuleHelpFunction(module,link):
   if module in modules:
     try:
-      modules[module]['help'](nick,chan)
+      modules[module]['help'](link)
     except Exception,e:
       log_error("Exception running help function %s from module %s: %s" % (str(modules[module]['help']),str(module),str(e)))
   else:
-    SendTo(nick,'No help found for module %s' % module)
+    link.send_private('No help found for module %s' % module)
 
 def UnregisterModule(module):
   global commands

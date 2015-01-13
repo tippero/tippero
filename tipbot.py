@@ -90,7 +90,10 @@ def GetBalance(nick,chan,cmd):
     balance = long(balance)
     sbalance = AmountToString(balance)
     if balance < coinspecs.atomic_units:
-      SendTo(sendto, "%s's balance is %s (%.16g %s)" % (nick, sbalance, float(balance) / coinspecs.atomic_units, coinspecs.name))
+      if balance == 0:
+        SendTo(sendto, "%s's balance is %s" % (nick, sbalance))
+      else:
+        SendTo(sendto, "%s's balance is %s (%.16g %s)" % (nick, sbalance, float(balance) / coinspecs.atomic_units, coinspecs.name))
     else:
       SendTo(sendto, "%s's balance is %s" % (nick, sbalance))
   except Exception, e:

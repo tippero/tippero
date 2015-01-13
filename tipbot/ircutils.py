@@ -313,21 +313,21 @@ def IRCLoop(on_idle,on_identified,on_command):
       continue
 
     try:
-        cparts = data.split(':')
-        if len(cparts) < 2:
+        cparts = data.lstrip(':').split(' :')
+        if len(cparts) == 0:
             continue
-        if len(cparts) >= 9:
-          idx_colon = data.find(':',1)
-          idx_space = data.find(' ')
-          if idx_space and idx_colon < idx_space and re.search("@([0-9a-fA-F]+:){7}[0-9a-fA-F]+", data):
-            log_info('Found IPv6 address in non-text, restructuring')
-            idx = data.rfind(':')
-            cparts = [ cparts[0], "".join(cparts[1:]) ]
-        if len(cparts) >= 3:
-          text = cparts[2]
+        #if len(cparts) >= 9:
+        #  idx_colon = data.find(':',1)
+        #  idx_space = data.find(' ')
+        #  if idx_space and idx_colon < idx_space and re.search("@([0-9a-fA-F]+:){7}[0-9a-fA-F]+", data):
+        #    log_info('Found IPv6 address in non-text, restructuring')
+        #    idx = data.rfind(':')
+        #    cparts = [ cparts[0], "".join(cparts[1:]) ]
+        if len(cparts) >= 2:
+          text = cparts[1]
         else:
           text = ""
-        parts = cparts[1].split(' ')
+        parts = cparts[0].split(' ')
         who = parts[0]
         action = parts[1]
         chan = parts[2]
@@ -406,12 +406,14 @@ def IRCLoop(on_idle,on_identified,on_command):
             userstable[who_chan][who_chan_user] = None
           log_log("New list of users in %s: %s" % (who_chan, str(userstable[who_chan].keys())))
         except Exception,e:
-          log_error('Failed to parse "who" line: %s: %s' % (data, str(e)))
+          log_error('Failed to parse "352" line: %s: %s' % (data, str(e)))
 
       elif action == '353':
         try:
           who_chan = parts[4]
-          who_chan_users = cparts[2].split(" ")
+          who_chan_users = cparts[1].split(" ")
+          log_info('who_chan: %s' % str(who_chan))
+          log_info('who_chan_users: %s' % str(who_chan_users))
           for who_chan_user in who_chan_users:
             if not who_chan_user in userstable[who_chan]:
               if who_chan_user[0] == "@":
@@ -419,7 +421,7 @@ def IRCLoop(on_idle,on_identified,on_command):
               userstable[who_chan][who_chan_user] = None
           log_log("New list of users in %s: %s" % (who_chan, str(userstable[who_chan].keys())))
         except Exception,e:
-          log_error('Failed to parse "who" line: %s: %s' % (data, str(e)))
+          log_error('Failed to parse "353" line: %s: %s' % (data, str(e)))
 
       elif action == 'PRIVMSG':
         UpdateLastActiveTime(chan,GetNick(who))

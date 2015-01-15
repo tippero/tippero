@@ -330,7 +330,10 @@ def IRCLoop(on_idle,on_identified,on_command):
         parts = cparts[0].split(' ')
         who = parts[0]
         action = parts[1]
-        chan = parts[2]
+        if len(parts) >= 3:
+          chan = parts[2]
+        else:
+          chan = None
     except Exception, e:
         log_error('main parser: Exception, continuing: %s' % str(e))
         continue

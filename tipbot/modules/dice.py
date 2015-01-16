@@ -116,7 +116,7 @@ def Dice(nick,chan,cmd):
 
   redis_hset("dice:rolls",nick,rolls)
 
-  SendTo(nick, "%s" % msg)
+  SendTo(sendto, "%s" % msg)
 
 def ShowDiceStats(sendto,snick,title):
   return ShowGameStats(sendto,snick,title,"dice")

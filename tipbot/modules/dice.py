@@ -240,7 +240,6 @@ RegisterCommand({
   'name': 'dice',
   'parms': '<amount> <multiplier>',
   'function': Dice,
-  'admin': True,
   'registered': True,
   'help': "start a dice game - house edge %.1f%%" % (float(config.dice_edge)*100)
 })
@@ -249,7 +248,6 @@ RegisterCommand({
   'name': 'stats',
   'parms': '[<name>]',
   'function': GetDiceStats,
-  'admin': True,
   'registered': True,
   'help': "displays your dice stats"
 })
@@ -258,7 +256,6 @@ RegisterCommand({
   'name': 'resetstats',
   'parms': '[<name>]',
   'function': ResetDiceStats,
-  'admin': True,
   'registered': True,
   'help': "resets your dice stats"
 })
@@ -275,7 +272,6 @@ RegisterCommand({
   'name': 'playerseed',
   'parms': '<string>',
   'function': PlayerSeed,
-  'admin': True,
   'registered': True,
   'help': "set a custom seed to use in the hash calculation"
 })
@@ -283,7 +279,6 @@ RegisterCommand({
   'module': __name__,
   'name': 'seeds',
   'function': Seeds,
-  'admin': True,
   'registered': True,
   'help': "Show hash of your current server seed and your player seed"
 })
@@ -291,7 +286,6 @@ RegisterCommand({
   'module': __name__,
   'name': 'faircheck',
   'function': FairCheck,
-  'admin': True,
   'registered': True,
   'help': "Check provably fair rolls"
 })
@@ -299,13 +293,11 @@ RegisterCommand({
   'module': __name__,
   'name': 'fair',
   'function': Fair,
-  'admin': True,
   'help': "describe the provably fair dice game"
 })
 RegisterCommand({
   'module': __name__,
   'name': 'faircode',
   'function': FairCode,
-  'admin': True,
   'help': "Show sample Python code to check bet fairness"
 })

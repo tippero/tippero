@@ -57,7 +57,7 @@ def IsPlayerBalanceAtLeast(nick,units):
 def SetServerSeed(nick,game,seed):
   try:
     redis_hset('%s:serverseed' % game,nick,seed)
-    log_info('%s\'s %s serverseed set to %s' % (nick, game, seed))
+    log_info('%s\'s %s server seed set' % (nick, game))
   except Exception,e:
     log_error('Failed to set %s server seed for %s: %s' % (game, nick, str(e)))
     raise

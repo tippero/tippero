@@ -62,14 +62,22 @@ def Dice(nick,chan,cmd):
     amount=float(cmd[1])
     units=long(amount*coinspecs.atomic_units)
     multiplier = float(cmd[2])
+    overunder=GetParam(cmd,3)
   except Exception,e:
-    SendTo(sendto, "Usage: dice amount multiplier")
+    SendTo(sendto, "Usage: dice amount multiplier [over|under]")
     return
   if multiplier < 0.1 or multiplier > 10:
     SendTo(sendto, "Invalid multiplier: should be between 0.1 and 10")
     return
+  if overunder == "over":
+    under=False
+  elif overunder == "under" or not overunder:
+    under=True
+  else:
+    SendTo(sendto, "Usage: dice amount multiplier [over|under]")
+    return
 
-  log_info("Dice: %s wants to bet %s at x%f" % (nick, AmountToString(units), multiplier))
+  log_info("Dice: %s wants to bet %s at x%f, %s target" % (nick, AmountToString(units), multiplier, "under" if under else "over"))
   potential_loss = amount * multiplier
   valid,reason = IsBetAmountValid(amount,config.dice_min_bet,config.dice_max_bet,potential_loss,config.dice_max_loss,config.dice_max_loss_ratio)
   if not valid:
@@ -98,16 +106,19 @@ def Dice(nick,chan,cmd):
     return
 
   target = (1 - config.dice_edge) / (1+multiplier)
-  log_info("Dice: %s's #%d roll: %.16g, target %.16g" % (nick, rolls, roll, target))
+  log_info("Dice: %s's #%d roll: %.16g, target %s %.16g" % (nick, rolls, roll, "under" if under else "over", target))
 
   lose_units = units
   win_units = long(units * multiplier)
   log_log('units %s, multiplier %f, edge %f, lose_units %s, win_units %s' % (AmountToString(units), multiplier, config.dice_edge, AmountToString(lose_units), AmountToString(win_units)))
-  win = roll <= target
-  if win:
-    msg = "%s wins %s on roll #%d! %.16g <= %.16g" % (nick, AmountToString(win_units), rolls, roll, target)
+  if under:
+    win = roll <= target
   else:
-    msg = "%s loses %s on roll #%d. %.16g > %.16g" % (nick, AmountToString(lose_units), rolls, roll, target)
+    win = roll >= target
+  if win:
+    msg = "%s wins %s on roll #%d! %.16g %s %.16g" % (nick, AmountToString(win_units), rolls, roll, "<=" if under else ">=", target)
+  else:
+    msg = "%s loses %s on roll #%d. %.16g %s %.16g" % (nick, AmountToString(lose_units), rolls, roll, ">" if under else "<", target)
 
   try:
     RecordGameResult(nick,chan,"dice",win,not win,win_units if win else lose_units)
@@ -223,8 +234,9 @@ def FairCode(nick,chan,cmd):
 
 def DiceHelp(nick,chan):
   SendTo(nick,"The dice module is a provably fair %s dice betting game" % coinspecs.name)
-  SendTo(nick,"Basic usage: !dice <amount> <multiplier>")
-  SendTo(nick,"The goal is to get a roll under a target that depends on your chosen multiplier")
+  SendTo(nick,"Basic usage: !dice <amount> <multiplier> [over|under]")
+  SendTo(nick,"The goal is to get a roll under (or over, at your option) a target that depends")
+  SendTo(nick,"on your chosen profit multiplier (1 for even money)")
   SendTo(nick,"See !fair and !faircode for a description of the provable fairness of the game")
   SendTo(nick,"See !faircheck to get the server seed to check past rolls were fair")
 
@@ -238,10 +250,10 @@ RegisterModule({
 RegisterCommand({
   'module': __name__,
   'name': 'dice',
-  'parms': '<amount> <multiplier>',
+  'parms': '<amount> <multiplier> [over|under]',
   'function': Dice,
   'registered': True,
-  'help': "start a dice game - house edge %.1f%%" % (float(config.dice_edge)*100)
+  'help': "play a dice game - house edge %.1f%%" % (float(config.dice_edge)*100)
 })
 RegisterCommand({
   'module': __name__,

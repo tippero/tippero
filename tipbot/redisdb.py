@@ -64,6 +64,15 @@ def redis_sadd(k,v):
 def redis_smembers(k):
   return redisdb.smembers(k)
 
+def redis_rpush(k,v):
+  return redisdb.rpush(k,v)
+
+def redis_lpop(k):
+  return redisdb.lpop(k)
+
+def redis_lindex(k,n):
+  return redisdb.lindex(k,n)
+
 def redis_delete(k):
   return redisdb.delete(k)
 
@@ -85,6 +94,9 @@ def CompatibilityCheck():
     if not p.incrby: raise RuntimeError('incrby call not found')
     if not p.sadd: raise RuntimeError('sadd call not found')
     if not p.smembers: raise RuntimeError('smembers call not found')
+    if not p.rpush: raise RuntimeError('rpush call not found')
+    if not p.lpop: raise RuntimeError('lpop call not found')
+    if not p.lindex: raise RuntimeError('lindex call not found')
     if not p.execute: raise RuntimeError('execute call not found')
     if not p.delete: raise RuntimeError('delete call not found')
   except Exception,e:

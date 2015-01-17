@@ -30,6 +30,8 @@ from tipbot.ircutils import *
 from tipbot.redisdb import *
 from tipbot.command_manager import *
 
+disabled = False
+
 selected_coin = None
 modulenames = []
 argc = 1
@@ -232,10 +234,21 @@ def Reload(nick,chan,cmd):
     log_error('Failed to load module "%s": %s' % (modulename, str(e)))
     SendTo(sendto,'An error occured')
 
+def Disable(nick,chan,cmd):
+  global disabled
+  sendto=GetSendTo(nick,chan)
+  disabled = True
+  SendTo(sendto,'%s disabled, will require restart' % config.tipbot_name)
+
 def OnIdle():
+  if disabled:
+    return
   RunIdleFunctions([irc,redisdb])
 
 def OnIdentified(nick, identified):
+  if disabled:
+    log_info('Ignoring identified notification for %s while disabled' % str(nick))
+    return
   RunNextCommand(nick, identified)
 
 def RegisterCommands():
@@ -252,8 +265,12 @@ def RegisterCommands():
   RegisterCommand({'module': 'builtin', 'name': 'dump_users', 'function': DumpUsers, 'admin': True, 'help': "Dump users table to log"})
   RegisterCommand({'module': 'builtin', 'name': 'show_activity', 'function': ShowActivity, 'admin': True, 'help': "Show time since a user was last active"})
   RegisterCommand({'module': 'builtin', 'name': 'reload', 'function': Reload, 'admin': True, 'help': "Reload a module"})
+  RegisterCommand({'module': 'builtin', 'name': 'disable', 'function': Disable, 'admin': True, 'help': "Disable %s"%config.tipbot_name})
 
 def OnCommandProxy(cmd,chan,who):
+  if disabled:
+    log_info('Ignoring command from %s while disabled: %s' % (str(who),str(cmd)))
+    return
   OnCommand(cmd,chan,who,RunAdminCommand,RunRegisteredCommand)
 
 

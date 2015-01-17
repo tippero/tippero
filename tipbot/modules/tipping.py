@@ -27,21 +27,10 @@ from tipbot.ircutils import *
 from tipbot.command_manager import *
 from tipbot.redisdb import *
 
+pending_confirmations=dict()
 
-def Tip(nick,chan,cmd):
+def PerformTip(nick,chan,who,units):
   sendto=GetSendTo(nick,chan)
-  try:
-    who=cmd[1]
-    amount=float(cmd[2])
-  except Exception,e:
-    SendTo(sendto, "Usage: tip nick amount")
-    return
-  units=long(amount*coinspecs.atomic_units)
-  if units <= 0:
-    SendTo(sendto, "Invalid amount")
-    return
-
-  log_info("Tip: %s wants to tip %s %s" % (nick, who, AmountToString(units)))
   try:
     balance = redis_hget("balances",nick)
     if balance == None:
@@ -68,6 +57,44 @@ def Tip(nick,chan,cmd):
   except Exception, e:
     log_error('Tip: exception: %s' % str(e))
     SendTo(sendto, "An error has occured")
+
+def Tip(nick,chan,cmd):
+  userstable = GetUsersTable()
+
+  sendto=GetSendTo(nick,chan)
+  try:
+    who=cmd[1]
+    amount=float(cmd[2])
+  except Exception,e:
+    SendTo(sendto, "Usage: tip nick amount")
+    return
+  units=long(amount*coinspecs.atomic_units)
+  if units <= 0:
+    SendTo(sendto, "Invalid amount")
+    return
+
+  log_info("Tip: %s wants to tip %s %s" % (nick, who, AmountToString(units)))
+  if chan in userstable:
+    log_info('getting keys')
+    userlist = userstable[chan].keys()
+    log_info('testingwho')
+    if not who in userlist:
+      SendTo(sendto,"%s is not in %s: if you really intend to tip %s, type !confirmtip before tipping again" % (who, chan, who))
+      pending_confirmations[nick]={'who': who, 'units': units}
+      return
+  log_info('delk')
+  pending_confirmations.pop(nick,None)
+  PerformTip(nick,chan,who,units)
+
+def ConfirmTip(nick,chan,cmd):
+  sendto=GetSendTo(nick,chan)
+  if not nick in pending_confirmations:
+    SendTo(sendto,"%s has no tip waiting confirmation" % nick)
+    return
+  who=pending_confirmations[nick]['who']
+  units=pending_confirmations[nick]['units']
+  pending_confirmations.pop(nick,None)
+  PerformTip(nick,chan,who,units)
 
 def Rain(nick,chan,cmd):
   userstable = GetUsersTable()
@@ -280,6 +307,13 @@ RegisterCommand({
   'function': Tip,
   'registered': True,
   'help': "tip another user"
+})
+RegisterCommand({
+  'module': __name__,
+  'name': 'confirmtip',
+  'function': ConfirmTip,
+  'registered': True,
+  'help': "confirm a tip to another user who is not in the channel"
 })
 RegisterCommand({
   'module': __name__,

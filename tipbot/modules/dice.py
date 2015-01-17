@@ -250,7 +250,7 @@ RegisterModule({
 RegisterCommand({
   'module': __name__,
   'name': 'dice',
-  'parms': '<amount> <multiplier> [over|under]',
+  'parms': '<amount-in-monero> <multiplier> [over|under]',
   'function': Dice,
   'registered': True,
   'help': "play a dice game - house edge %.1f%%" % (float(config.dice_edge)*100)

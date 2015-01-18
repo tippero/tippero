@@ -78,6 +78,30 @@ def AmountToString(amount):
       samount = "%.16g %s" % (float(lamount) / coinspecs.atomic_units, coinspecs.name)
   return samount
 
+def TimeToString(seconds):
+  seconds=float(seconds)
+  if seconds < 1e-3:
+    return "%.2f microseconds" % (seconds*1e6)
+  if seconds < 1:
+    return "%.2f milliseconds" % (seconds*1e3)
+  if seconds < 60:
+    return "%.2f seconds" % (seconds)
+  if seconds < 3600:
+    return "%.2f minutes" % (seconds / 60)
+  if seconds < 3600 * 24:
+    return "%.2f hours" % (seconds / 3600)
+  if seconds < 3600 * 24 * 30.5:
+    return "%.2f days" % (seconds / (3600*24))
+  if seconds < 3600 * 24 * 365.25:
+    return "%.2f months" % (seconds / (3600*24*30.5))
+  if seconds < 3600 * 24 * 365.25 * 100:
+    return "%.2f years" % (seconds / (3600*24*365.25))
+  if seconds < 3600 * 24 * 365.25 * 1000:
+    return "%.2f centuries" % (seconds / (3600*24*365.25 * 100))
+  if seconds < 3600 * 24 * 365.25 * 1000000:
+    return "%.2f millenia" % (seconds / (3600*24*365.25 * 100))
+  return " like, forever, dude"
+
 def SendJSONRPCCommand(host,port,method,params):
   try:
     http = httplib.HTTPConnection(host,port,timeout=20)

@@ -281,8 +281,8 @@ def RainActive(nick,chan,cmd):
       return
 
     pipe.execute()
-    log_info("%s rained %s - %s (total %s, acc %s) on the %d nicks active in the last %f hours" % (nick, AmountToString(minu), AmountToString(maxu), AmountToString(units), AmountToString(rained_units), nnicks, hours))
-    SendTo(chan, "%s rained %s - %s on the %d nicks active in the last %f hours" % (nick, AmountToString(minu), AmountToString(maxu), nnicks, hours))
+    log_info("%s rained %s - %s (total %s, acc %s) on the %d nicks active in the last %s" % (nick, AmountToString(minu), AmountToString(maxu), AmountToString(units), AmountToString(rained_units), nnicks, TimeToString(seconds)))
+    SendTo(chan, "%s rained %s - %s on the %d nicks active in the last %s" % (nick, AmountToString(minu), AmountToString(maxu), nnicks, TimeToString(seconds)))
 
   except Exception,e:
     log_error('Rain: exception: %s' % str(e))

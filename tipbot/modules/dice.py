@@ -106,6 +106,8 @@ def Dice(nick,chan,cmd):
     return
 
   target = (1 - config.dice_edge) / (1+multiplier)
+  if not under:
+    target = 1 - target
   log_info("Dice: %s's #%d roll: %.16g, target %s %.16g" % (nick, rolls, roll, "under" if under else "over", target))
 
   lose_units = units

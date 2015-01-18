@@ -13,6 +13,7 @@ import random
 import hashlib
 import time
 import tipbot.coinspecs as coinspecs
+from tipbot.command_manager import *
 from utils import *
 
 def IsBetAmountValid(amount,minbet,maxbet,potential_loss,max_loss,max_loss_ratio):
@@ -191,3 +192,72 @@ def ResetGameStats(sendto,snick,game):
   except Exception,e:
     log_error('Error resetting %s stats for %s: %s' % (game,snick,str(e)))
     raise
+
+def RetrieveHouseBalance():
+  balance, unlocked_balance = RetrieveTipbotBalance()
+
+  nicks = redis_hgetall("balances")
+  for nick in nicks:
+    nb = redis_hget("balances", nick)
+    unlocked_balance = unlocked_balance - long(nb)
+    log_log('RetrieveHouseBalance: subtracting %s from %s to give %s' % (AmountToString(nb), nick, AmountToString(unlocked_balance)))
+
+  rbal=redis_get('reserve_balance')
+  if rbal:
+    unlocked_balance = unlocked_balance - long(rbal)
+
+  if unlocked_balance < 0:
+    raise RuntimeError('Negative house balance')
+    return
+  return unlocked_balance
+
+def ReserveBalance(nick,chan,cmd):
+  sendto=GetSendTo(nick,chan)
+  rbal=GetParam(cmd,1)
+  if rbal:
+    try:
+      rbal=float(cmd[1])
+      if rbal < 0:
+        raise RuntimeError('negative balance')
+      rbal = long(rbal * coinspecs.atomic_units)
+    except Exception,e:
+      log_error('SetReserveBalance: invalid balance: %s' % str(e))
+      SendTo(sendto,"Invalid balance")
+      return
+
+  try:
+    current_rbal=long(redis_get('reserve_balance') or 0)
+  except Exception,e:
+    log_error('Failed to get current reserve balance: %s' % str(e))
+    SendTo(sendto,"Failed to get current reserve balance")
+    return
+  if rbal == None:
+    SendTo(sendto,"Reserve balance is %s" % AmountToString(current_rbal))
+    return
+
+  try:
+    house_balance = RetrieveHouseBalance()
+  except Exception,e:
+    log_error('Failed to get house balance: %s' % str(e))
+    SendTo(sendto,"Failed to get house balance")
+    return
+  if rbal > house_balance + current_rbal:
+    log_error('Cannot set reserve balance higher than max house balance')
+    SendTo(sendto,'Cannot set reserve balance higher than max house balance')
+    return
+  try:
+    redis_set('reserve_balance',rbal)
+  except Exception,e:
+    log_error('Failed to set reserve balance: %s' % str(e))
+    SendTo(sendto,"Failed to set reserve balance")
+    return
+  SendTo(sendto,"Reserve balance set")
+
+RegisterCommand({
+  'module': 'betting',
+  'name': 'reserve_balance',
+  'parms': '[<amount>]',
+  'function': ReserveBalance,
+  'admin': True,
+  'help': "Set or get reserve balance (not part of the house balance)"
+})

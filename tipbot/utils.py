@@ -181,17 +181,3 @@ def RetrieveTipbotBalance():
     return
   return balance, unlocked_balance
 
-def RetrieveHouseBalance():
-  balance, unlocked_balance = RetrieveTipbotBalance()
-
-  nicks = redis_hgetall("balances")
-  for nick in nicks:
-    nb = redis_hget("balances", nick)
-    unlocked_balance = unlocked_balance - long(nb)
-    log_log('RetrieveHouseBalance: subtracting %s from %s to give %s' % (AmountToString(nb), nick, AmountToString(unlocked_balance)))
-
-  if unlocked_balance < 0:
-    raise RuntimeError('Negative house balance')
-    return
-  return unlocked_balance
-

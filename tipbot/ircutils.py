@@ -199,6 +199,15 @@ def GetActiveNicks(chan,seconds):
 def GetUsersTable():
   return userstable
 
+def IsAcceptableCommandPrefix(s):
+  s=s.strip()
+  log_log('checking whether %s is an acceptable command prefix' % s)
+  if s=="":
+    return True
+  if re.match("%s[\t ]*[:,]?$"%config.tipbot_name, s):
+    return True
+  return False
+
 #def Op(to_op, chan):
 #    SendIRC( 'MODE ' + chan + ' +o: ' + to_op)
 #
@@ -430,8 +439,9 @@ def IRCLoop(on_idle,on_identified,on_command):
         UpdateLastActiveTime(chan,GetNick(who))
         # resplit to avoid splitting text that contains ':'
         text = data.split(':',2)[2]
+        text=text.strip()
         exidx = text.find('!')
-        if exidx != -1 and len(text)>exidx+1 and text[exidx+1] in string.ascii_letters:
+        if exidx != -1 and len(text)>exidx+1 and text[exidx+1] in string.ascii_letters and IsAcceptableCommandPrefix(text[:exidx]):
             cmd = text.split('!')[1]
             cmd = cmd.split(' ')
             cmd[0] = cmd[0].strip(' \t\n\r')

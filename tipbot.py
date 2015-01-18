@@ -111,20 +111,21 @@ def AddBalance(nick,chan,cmd):
     anick = nick
     amount = GetParam(cmd,1)
   if not amount:
-    SendTo(sendto, 'usage: !addbalance <atomicunits> or !addbalance <nick> <atomicunits>')
+    SendTo(sendto, 'usage: !addbalance [<nick>] <amount>')
     return
   try:
-    units = long(amount)
+    units = long(float(amount)*coinspecs.atomic_units)
   except Exception,e:
-    log_error('AddBalance: error converting amount: %s' % str(e))
-    SendTo(sendto, 'usage: !addbalance <atomicunits> or !addbalance <nick> <atomicunits>')
+    log_error('AddBalance: invalid amount: %s' % str(e))
+    SendTo(sendto, 'usage: !addbalance [<nick>] <amount>')
     return
-  log_info("AddBalance: Adding %s to %s's balance" % (AmountToString(amount),anick))
+  log_info("AddBalance: Adding %s to %s's balance" % (AmountToString(units),anick))
   try:
-    balance = redis_hincrby("balances",anick,amount)
+    balance = redis_hincrby("balances",anick,units)
   except Exception, e:
     log_error('AddBalance: exception: %s' % str(e))
     SendTo(sendto, "An error has occured")
+  SendTo(sendto,"%s's bvalance is now %s" % (anick,AmountToString(balance)))
 
 def ScanWho(nick,chan,cmd):
   Who(chan)

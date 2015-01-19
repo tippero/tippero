@@ -64,8 +64,8 @@ def Dice(link,cmd):
   except Exception,e:
     link.send("Usage: dice amount multiplier [over|under]")
     return
-  if multiplier < 0.1 or multiplier > 10:
-    link.send("Invalid multiplier: should be between 0.1 and 10")
+  if multiplier < 1.1 or multiplier > 10:
+    link.send("Invalid multiplier: should be between 1.1 and 10")
     return
   if overunder == "over":
     under=False
@@ -103,22 +103,22 @@ def Dice(link,cmd):
     link.send("An error occured")
     return
 
-  target = (1 - config.dice_edge) / (1+multiplier)
+  target = (1 - config.dice_edge) / multiplier
   if not under:
     target = 1 - target
   log_info("Dice: %s's #%d roll: %.16g, target %s %.16g" % (identity, rolls, roll, "under" if under else "over", target))
 
   lose_units = units
-  win_units = long(units * multiplier)
+  win_units = long(units * multiplier) - lose_units
   log_log('units %s, multiplier %f, edge %f, lose_units %s, win_units %s' % (AmountToString(units), multiplier, config.dice_edge, AmountToString(lose_units), AmountToString(win_units)))
   if under:
     win = roll <= target
   else:
     win = roll >= target
   if win:
-    msg = "%s wins %s on roll #%d! %.16g %s %.16g" % (link.user.nick, AmountToString(win_units), rolls, roll, "<=" if under else ">=", target)
+    msg = "%s bets %s and wins %s on roll #%d! %.16g %s %.16g" % (link.user.nick, AmountToString(lose_units), AmountToString(win_units+lose_units), rolls, roll, "<=" if under else ">=", target)
   else:
-    msg = "%s loses %s on roll #%d. %.16g %s %.16g" % (link.user.nick, AmountToString(lose_units), rolls, roll, ">" if under else "<", target)
+    msg = "%s bets %s and loses on roll #%d. %.16g %s %.16g" % (link.user.nick, AmountToString(lose_units), rolls, roll, ">" if under else "<", target)
 
   try:
     RecordGameResult(link,"dice",win,not win,win_units if win else lose_units)

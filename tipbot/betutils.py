@@ -220,6 +220,15 @@ def RetrieveHouseBalance():
     return
   return unlocked_balance
 
+def GetHouseBalance(link,cmd):
+  try:
+    balance = RetrieveHouseBalance()
+  except Exception,e:
+    log_error('Failed to retrieve house balance: %s' % str(e))
+    link.send('An error occured')
+    return
+  link.send('House balance: %s' % AmountToString(balance))
+
 def ReserveBalance(link,cmd):
   rbal=GetParam(cmd,1)
   if rbal:
@@ -268,4 +277,12 @@ RegisterCommand({
   'function': ReserveBalance,
   'admin': True,
   'help': "Set or get reserve balance (not part of the house balance)"
+})
+RegisterCommand({
+  'module': 'betting',
+  'name': 'house_balance',
+  'function': GetHouseBalance,
+  'admin': True,
+  'registered': True,
+  'help': "get the house balance"
 })

@@ -24,15 +24,6 @@ from tipbot.command_manager import *
 from tipbot.redisdb import *
 from tipbot.betutils import *
 
-def GetHouseBalance(link,cmd):
-  try:
-    balance = RetrieveHouseBalance()
-  except Exception,e:
-    log_error('Failed to retrieve house balance: %s' % str(e))
-    link.send('An error occured')
-    return
-  link.send('House balance: %s' % AmountToString(balance))
-
 def Roll(link):
   identity=link.identity()
   try:
@@ -281,14 +272,6 @@ RegisterCommand({
   'function': ResetDiceStats,
   'registered': True,
   'help': "resets your dice stats"
-})
-RegisterCommand({
-  'module': __name__,
-  'name': 'house_balance',
-  'function': GetHouseBalance,
-  'admin': True,
-  'registered': True,
-  'help': "get the house balance"
 })
 RegisterCommand({
   'module': __name__,

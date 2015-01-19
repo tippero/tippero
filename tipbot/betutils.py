@@ -12,6 +12,7 @@
 import random
 import hashlib
 import time
+import datetime
 import tipbot.coinspecs as coinspecs
 from tipbot.command_manager import *
 from utils import *
@@ -114,32 +115,41 @@ def GetServerSeedHash(link,game):
 def RecordGameResult(link,game,win,lose,units):
   identity=link.identity()
   try:
+    ts=datetime.datetime.utcnow()
+    ts="%u-%02u-%02u-%02u" % (ts.year,ts.month,ts.day,ts.hour)
     p = redis_pipeline()
     tname="%s:stats:"%game+identity
     rtname="%s:stats:reset:"%game+identity
     alltname="%s:stats:"%game
+    ztname="%s:zstats:"%game+":"
     p.hincrby(tname,"bets",1)
     p.hincrby(rtname,"bets",1)
     p.hincrby(alltname,"bets",1)
+    p.zincrby(ztname+"bets",ts,1)
     p.hincrby(tname,"wagered",units)
     p.hincrby(rtname,"wagered",units)
     p.hincrby(alltname,"wagered",units)
+    p.zincrby(ztname+"wagered",ts,units)
     if win:
       p.hincrby("balances",identity,units)
       p.hincrby(tname,"won",units)
       p.hincrby(rtname,"won",units)
       p.hincrby(alltname,"won",units)
+      p.zincrby(ztname+"won",ts,units)
       p.hincrby(tname,"nwon",1)
       p.hincrby(rtname,"nwon",1)
       p.hincrby(alltname,"nwon",1)
+      p.zincrby(ztname+"nwon",ts,1)
     if lose:
       p.hincrby("balances",identity,-units)
       p.hincrby(tname,"lost",units)
       p.hincrby(rtname,"lost",units)
       p.hincrby(alltname,"lost",units)
+      p.zincrby(ztname+"lost",ts,units)
       p.hincrby(tname,"nlost",1)
       p.hincrby(rtname,"nlost",1)
       p.hincrby(alltname,"nlost",1)
+      p.zincrby(ztname+"nlost",ts,1)
     p.execute()
   except Exception,e:
     log_error('RecordGameResult: exception updating redis: %s' % str(e))

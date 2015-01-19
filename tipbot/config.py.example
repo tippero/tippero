@@ -52,6 +52,14 @@ network_config = {
     'timeout_seconds': 600,
     'channels': ['#txtptest000'],
   },
+  'reddit': {
+    'subreddits': ['test'],
+    'login': 'testbx',
+    'keyword': '/u/testbx',
+    'user_agent': tipbot_name,
+    'update_period': 90,
+    'load_limit': 100,
+  }
 }
 
 dice_min_multiplier=1.1

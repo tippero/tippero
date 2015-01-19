@@ -73,6 +73,9 @@ def redis_lpop(k):
 def redis_lindex(k,n):
   return redisdb.lindex(k,n)
 
+def redis_zincrby(t,k,s):
+  return redisdb.zincrby(t,k,s)
+
 def redis_delete(k):
   return redisdb.delete(k)
 
@@ -97,6 +100,7 @@ def CompatibilityCheck():
     if not p.rpush: raise RuntimeError('rpush call not found')
     if not p.lpop: raise RuntimeError('lpop call not found')
     if not p.lindex: raise RuntimeError('lindex call not found')
+    if not p.zincrby: raise RuntimeError('zincrby call not found')
     if not p.execute: raise RuntimeError('execute call not found')
     if not p.delete: raise RuntimeError('delete call not found')
   except Exception,e:

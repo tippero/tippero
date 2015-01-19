@@ -318,16 +318,36 @@ def OnCommandProxy(link,cmd):
     log_error('Exception running command %s: %s' % (str(cmd),str(e)))
   link.batch_send_done()
 
-def MigrateBalances():
+def MigrateRedis():
   balances=redis_hgetall('balances')
   for balance in balances:
     if balance.find(':') == -1:
       redis_hset('balances','freenode:'+balance,balances[balance])
       redis_hdel('balances',balance)
 
+  keys=redisdb.keys('*')
+  for key in keys:
+    if key.startswith('dice:stats:') and key.find('freenode:') == -1:
+      if key!="dice:stats:" and key!="dice:stats:*":
+        parts=key.split(':')
+        if len(parts)==3 or (len(parts)==4 and parts[2]=="reset"):
+          parts.insert(len(parts)-1,"freenode")
+          newkey=":".join(parts)
+          log_info('renaming %s to %s' % (key,newkey))
+          redisdb.rename(key,newkey)
+  for recordtype in ['playerseed', 'serverseed', 'rolls']:
+    hname='dice:%s'%recordtype
+    keys=redisdb.hgetall(hname)
+    for key in keys:
+      if key.find(':') == -1:
+        newkey='freenode:'+key
+        log_info('renaming field %s to %s in %s' % (key,newkey,hname))
+        redisdb.hset(hname,newkey,redisdb.hget(hname,key))
+        redisdb.hdel(hname,key)
+
 RegisterCommands()
 redisdb = connect_to_redis(config.redis_host,config.redis_port)
-MigrateBalances()
+MigrateRedis()
 InitScanBlockHeight()
 
 # TODO: make this be created when the module is loaded

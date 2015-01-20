@@ -29,16 +29,17 @@ def IsBetAmountValid(amount,minbet,maxbet,potential_loss,max_loss,max_loss_ratio
     return False, "Max bet is %s" % AmountToString(maxbet * coinspecs.atomic_units)
   if amount < minbet:
     return False, "Min bet is %s" % AmountToString(minbet * coinspecs.atomic_units)
-  if potential_loss > max_loss:
-    return False, "Max potential loss is %s" % AmountToString(max_loss * coinspecs.atomic_units)
-  try:
-    house_balance = RetrieveHouseBalance()
-  except Exception,e:
-    log_error('Failed to get house balance: %s' % str(e))
-    return False, "Failed to get house balance"
-  max_floating_loss = max_loss_ratio * house_balance / coinspecs.atomic_units
-  if potential_loss > max_floating_loss:
-    return False, "Potential loss too large for house balance"
+  if potential_loss > 0:
+    if potential_loss > max_loss:
+      return False, "Max potential loss is %s" % AmountToString(max_loss * coinspecs.atomic_units)
+    try:
+      house_balance = RetrieveHouseBalance()
+    except Exception,e:
+      log_error('Failed to get house balance: %s' % str(e))
+      return False, "Failed to get house balance"
+    max_floating_loss = max_loss_ratio * house_balance / coinspecs.atomic_units
+    if potential_loss > max_floating_loss:
+      return False, "Potential loss too large for house balance"
 
   return True, None
 

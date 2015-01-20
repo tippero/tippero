@@ -107,9 +107,9 @@ def Deposit(link,cmd):
   Help(link)
 
 def Help(link):
-  link.send("You can send %s to your account:" % coinspecs.name);
-  link.send("  Address: %s" % GetTipbotAddress())
-  link.send("  Payment ID: %s" % GetPaymentID(link))
+  link.send_private("You can send %s to your account:" % coinspecs.name);
+  link.send_private("  Address: %s" % GetTipbotAddress())
+  link.send_private("  Payment ID: %s" % GetPaymentID(link))
 
 RegisterModule({
   'name': __name__,

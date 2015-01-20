@@ -293,10 +293,10 @@ def RainActive(link,cmd):
     return
 
 def Help(link):
-  link.send('You can tip other people, or rain %s on them' % coinspecs.name)
-  link.send('!tip tips a single person, while !rain shares equally between people in the channel')
-  link.send('!rainactive tips all within the last N hours, with more recently active people')
-  link.send('getting a larger share.')
+  link.send_private('You can tip other people, or rain %s on them' % coinspecs.name)
+  link.send_private('!tip tips a single person, while !rain shares equally between people in the channel')
+  link.send_private('!rainactive tips all within the last N hours, with more recently active people')
+  link.send_private('getting a larger share.')
 
 
 RegisterModule({

@@ -183,24 +183,24 @@ def Help(link,cmd):
     RunModuleHelpFunction(module,link)
     return
 
-  link.send("See available commands with !commands or !commands <modulename>")
-  link.send("Available modules: %s" % ", ".join(GetModuleNameList(IsAdmin(link))))
-  link.send("Get help on a particular module with !help <modulename>")
+  link.send_private("See available commands with !commands or !commands <modulename>")
+  link.send_private("Available modules: %s" % ", ".join(GetModuleNameList(IsAdmin(link))))
+  link.send_private("Get help on a particular module with !help <modulename>")
   if coinspecs.web_wallet_url:
-    link.send("No %s address ? You can use %s" % (coinspecs.name, coinspecs.web_wallet_url))
+    link.send_private("No %s address ? You can use %s" % (coinspecs.name, coinspecs.web_wallet_url))
 
 def Info(link,cmd):
-  link.send("Info for %s:" % config.tipbot_name)
-  link.send("Copyright 2014,2015 moneromooo - http://duckpool.mooo.com/tipbot/")
-  link.send("Type !help, or !commands for a list of commands")
-  link.send("NO WARRANTY, YOU MAY LOSE YOUR COINS")
-  link.send("By sending your %s to %s, you are giving up their control" % (coinspecs.name, config.tipbot_name))
-  link.send("to whoever runs the tipbot. Any tip you make/receive using %s" % config.tipbot_name)
-  link.send("is obviously not anonymous. %s's wallet may end up corrupt, or be" % config.tipbot_name)
-  link.send("stolen, the server compromised, etc. While I hope this won't be the case,")
-  link.send("I will not offer any warranty whatsoever for the use of %s or the" % config.tipbot_name)
-  link.send("return of any %s. Use at your own risk." % coinspecs.name)
-  link.send("That being said, I hope you enjoy using it :)")
+  link.send_private("Info for %s:" % config.tipbot_name)
+  link.send_private("Copyright 2014,2015 moneromooo - http://duckpool.mooo.com/tipbot/")
+  link.send_private("Type !help, or !commands for a list of commands")
+  link.send_private("NO WARRANTY, YOU MAY LOSE YOUR COINS")
+  link.send_private("By sending your %s to %s, you are giving up their control" % (coinspecs.name, config.tipbot_name))
+  link.send_private("to whoever runs the tipbot. Any tip you make/receive using %s" % config.tipbot_name)
+  link.send_private("is obviously not anonymous. %s's wallet may end up corrupt, or be" % config.tipbot_name)
+  link.send_private("stolen, the server compromised, etc. While I hope this won't be the case,")
+  link.send_private("I will not offer any warranty whatsoever for the use of %s or the" % config.tipbot_name)
+  link.send_private("return of any %s. Use at your own risk." % coinspecs.name)
+  link.send_private("That being said, I hope you enjoy using it :)")
 
 def InitScanBlockHeight():
   try:

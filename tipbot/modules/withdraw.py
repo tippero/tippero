@@ -141,8 +141,8 @@ def Withdraw(link,cmd):
 def Help(link):
   fee = config.withdrawal_fee or coinspecs.min_withdrawal_fee
   min_amount = config.min_withdraw_amount or fee
-  link.send("Minimum withdrawal: %s" % AmountToString(min_amount))
-  link.send("Withdrawal fee: %s" % AmountToString(fee))
+  link.send_private("Minimum withdrawal: %s" % AmountToString(min_amount))
+  link.send_private("Withdrawal fee: %s" % AmountToString(fee))
 
 
 

@@ -92,3 +92,11 @@ blackjack_max_loss_ratio = 0.05
 bookie_fee = 0.01
 bookie_min_bet = 0.001
 bookie_max_bet = 1000
+
+pinata_start_amount = 0.75
+pinata_base_target = 2
+pinata_num_increments = 20
+pinata_target_increment = 0.01
+pinata_winner_base_share = 0.75
+pinata_rain_remainder_share = 0.8
+pinata_carry_remainder_share = 0.17

@@ -136,6 +136,7 @@ def AddBalance(link,cmd):
   except Exception, e:
     log_error('AddBalance: exception: %s' % str(e))
     link.send( "An error has occured")
+    return
   link.send("%s's balance is now %s" % (aidentity,AmountToString(balance)))
 
 def ScanWho(link,cmd):

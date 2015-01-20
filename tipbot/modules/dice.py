@@ -202,7 +202,7 @@ def Seeds(link,cmd):
     return
   link.send('Your server seed hash is %s' % str(sh))
   if ps == "":
-    link.send('Your have not set a player seed')
+    link.send('You have not set a player seed')
   else:
     link.send('Your player seed hash is %s' % str(ps))
 

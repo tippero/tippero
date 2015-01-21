@@ -222,22 +222,24 @@ def ResetGameStats(link,sidentity,game):
 
 def RetrieveHouseBalance():
   balance, unlocked_balance = RetrieveTipbotBalance()
+  house_balance = unlocked_balance
 
+  user_balances=0
   identities = redis_hgetall("balances")
   for identity in identities:
-    ib = redis_hget("balances", identity)
-    unlocked_balance = unlocked_balance - long(ib)
-    log_log('RetrieveHouseBalance: subtracting %s from %s to give %s' % (AmountToString(ib), identity, AmountToString(unlocked_balance)))
+    ib = long(redis_hget("balances", identity))
+    house_balance = house_balance - ib
+    user_balances+=ib
 
-  rbal=redis_get('reserve_balance')
+  rbal=long(redis_get('reserve_balance') or 0)
   if rbal:
-    unlocked_balance = unlocked_balance - long(rbal)
-    log_log('RetrieveHouseBalance: subtracting %s reserve balance to give %s' % (AmountToString(rbal), AmountToString(unlocked_balance)))
+    house_balance = house_balance - rbal
 
-  if unlocked_balance < 0:
+  if house_balance < 0:
     raise RuntimeError('Negative house balance')
     return
-  return unlocked_balance
+  log_info('RetrieveHouseBalance: unlocked %s, users %s, reserve %s, house %s' % (AmountToString(unlocked_balance), AmountToString(user_balances), AmountToString(rbal), AmountToString(house_balance)))
+  return house_balance
 
 def GetHouseBalance(link,cmd):
   try:

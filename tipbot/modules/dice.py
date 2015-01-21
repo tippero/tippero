@@ -135,8 +135,8 @@ def GetDiceStats(link,cmd):
       return
   else:
     sidentity=identity
-  ShowDiceStats(link,sidentity,sidentity)
-  ShowDiceStats(link,"reset:"+sidentity,'%s since reset' % sidentity)
+  ShowDiceStats(link,sidentity,NickFromIdentity(sidentity))
+  ShowDiceStats(link,"reset:"+sidentity,'%s since reset' % NickFromIdentity(sidentity))
   ShowDiceStats(link,'','overall')
 
 def ResetDiceStats(link,cmd):

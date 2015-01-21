@@ -352,7 +352,7 @@ def Unban(link,cmd):
       sidentity=link.identity()
     sidentity=IdentityFromString(link,sidentity)
     redis_hdel('banned',sidentity)
-    link.send('%s was unbanned' % (sidentity))
+    link.send('%s was unbanned' % (NickFromIdentity(sidentity)))
   except Exception,e:
     log_error('Failed to unban %s: %s' % (sidentity,str(e)))
     link.send('An error occured')

@@ -566,7 +566,7 @@ def Blackjack(link,cmd):
   total_units_wagered = units + sidebets["total_amount_wagered"]
   potential_loss = amount * 1.5 + sidebets["potential_loss"] / coinspecs.atomic_units
   potential_units_loss = long (potential_loss * coinspecs.atomic_units)
-  log_info('%s bets a total of %s, potential loss %s, side bets %s' % (identity, AmountToString(total_units_wagered), AmountToString(potential_units_loss), str(sidebets)))
+  log_info('%s bets a total of %s (%.16g), potential loss %s, side bets %s' % (identity, AmountToString(total_units_wagered), total_amount_wagered, AmountToString(potential_units_loss), str(sidebets)))
   valid,reason = IsBetValid(link,total_amount_wagered,config.blackjack_min_bet,config.blackjack_max_bet,potential_loss,config.blackjack_max_loss,config.blackjack_max_loss_ratio)
   if not valid:
     log_info("Dice: %s's bet refused: %s" % (identity, reason))
@@ -900,8 +900,8 @@ def GetBlackjackStats(link,cmd):
       return
   else:
     sidentity=identity
-  ShowBlackjackStats(link,sidentity,sidentity)
-  ShowBlackjackStats(link,"reset:"+sidentity,'%s since reset' % sidentity)
+  ShowBlackjackStats(link,sidentity,NickFromIdentity(sidentity))
+  ShowBlackjackStats(link,"reset:"+sidentity,'%s since reset' % NickFromIdentity(sidentity))
   ShowBlackjackStats(link,'','overall')
 
 def PlayerSeed(link,cmd):

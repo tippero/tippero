@@ -40,6 +40,11 @@ admins = ["freenode:moneromooo", "freenode:moneromoo"]
 # list of nicks to ignore for rains - bots, trolls, etc
 no_rain_to_nicks = []
 
+# commands used by other bots, to avoid "unknown command" complaints
+silent_invalid_commands = {
+  'freenode': ['price','worth','net','pools','calc']
+}
+
 dice_edge = 0.01
 dice_max_bet = 5
 dice_min_bet = 0.001

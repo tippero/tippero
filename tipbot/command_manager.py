@@ -169,7 +169,13 @@ def OnCommand(link,cmd,check_admin,check_registered):
     else:
       c['function'](link,cmd)
   else:
-    link.send("Invalid command, try !help")
+    silent = False
+    if link.network.name in config.silent_invalid_commands:
+      if cmdname in config.silent_invalid_commands[link.network.name]:
+        log_info('silently ignoring command %s on %s' % (cmdname,link.network.name))
+        silent = True
+    if not silent:
+      link.send("Invalid command, try !help")
 
 def RunIdleFunctions(param=None):
   for f in idles:

@@ -17,7 +17,25 @@ import tipbot.coinspecs as coinspecs
 from tipbot.command_manager import *
 from utils import *
 
-def IsBetAmountValid(amount,minbet,maxbet,potential_loss,max_loss,max_loss_ratio):
+def IsBanned(link):
+  try:
+    banned = redis_hget('banned',link.identity())
+    if not banned:
+      return False, None
+    banned = float(banned)
+    now = time.time()
+    if banned < now:
+      redis_hdel('banned',link.identity())
+      return False, None
+    return True, 'You are banned for %s' % TimeToString(banned-now)
+  except Exception,e:
+    log_error('Failed to check bannishment for %s: %s' % (link.identity(),str(e)))
+    return False, None
+
+def IsBetValid(link,amount,minbet,maxbet,potential_loss,max_loss,max_loss_ratio):
+  banned,reason = IsBanned(link)
+  if banned:
+    return False, reason
   try:
     amount = float(amount)
   except Exception,e:
@@ -302,6 +320,44 @@ def ReserveBalance(link,cmd):
     return
   link.send("Reserve balance set")
 
+def Ban(link,cmd):
+  t = 3600
+  try:
+    sidentity = GetParam(cmd,1)
+    if sidentity:
+      sidentity=IdentityFromString(link,sidentity)
+      if sidentity!=link.identity() and not IsAdmin(link):
+        log_error('%s is not admin, cannot ban %s' % (link.identity(),sidentity))
+        link.send('Access denied')
+        return
+    else:
+      sidentity=link.identity()
+
+    banned = redis_hget('banned',sidentity)
+    now=time.time()
+    if banned and float(banned) > now+t:
+      link.send('%s is already banned for %s' % (NickFromIdentity(sidentity), TimeToString(banned-now)))
+    else:
+      redis_hset('banned',sidentity,now+t)
+      link.send('%s is banned for %s' % (NickFromIdentity(sidentity), TimeToString(t)))
+  except Exception,e:
+    log_error('Failed to ban %s: %s' % (sidentity,str(e)))
+    link.send('An error occured')
+    return
+
+def Unban(link,cmd):
+  try:
+    sidentity=GetParam(cmd,1)
+    if not sidentity:
+      sidentity=link.identity()
+    sidentity=IdentityFromString(link,sidentity)
+    redis_hdel('banned',sidentity)
+    link.send('%s was unbanned' % (sidentity))
+  except Exception,e:
+    log_error('Failed to unban %s: %s' % (sidentity,str(e)))
+    link.send('An error occured')
+    return
+
 RegisterCommand({
   'module': 'betting',
   'name': 'reserve_balance',
@@ -317,4 +373,18 @@ RegisterCommand({
   'admin': True,
   'registered': True,
   'help': "get the house balance"
+})
+RegisterCommand({
+  'module': 'betting',
+  'name': 'ban',
+  'function': Ban,
+  'registered': True,
+  'help': "ban yourself from playing for an hour"
+})
+RegisterCommand({
+  'module': 'betting',
+  'name': 'unban',
+  'function': Unban,
+  'admin': True,
+  'help': "unban someone from playing"
 })

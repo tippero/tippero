@@ -68,7 +68,7 @@ def Dice(link,cmd):
 
   log_info("Dice: %s wants to bet %s at x%f, %s target" % (identity, AmountToString(units), multiplier, "under" if under else "over"))
   potential_loss = amount * multiplier
-  valid,reason = IsBetAmountValid(amount,config.dice_min_bet,config.dice_max_bet,potential_loss,config.dice_max_loss,config.dice_max_loss_ratio)
+  valid,reason = IsBetValid(link,amount,config.dice_min_bet,config.dice_max_bet,potential_loss,config.dice_max_loss,config.dice_max_loss_ratio)
   if not valid:
     log_info("Dice: %s's bet refused: %s" % (identity, reason))
     link.send("%s: %s" % (link.user.nick, reason))

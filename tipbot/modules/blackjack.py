@@ -1051,7 +1051,6 @@ RegisterCommand({
   'name': 'blackjack',
   'parms': '<amount-in-monero>' if len(config.blackjack_sidebets) == 0 else '<amount-in-monero> [sidebet1 [sidebet2...]]',
   'function': Blackjack,
-  'admin': True,
   'registered': True,
   'help': "start a blackjack game - blackjack pays 3:2"
 })
@@ -1059,7 +1058,6 @@ RegisterCommand({
   'module': __name__,
   'name': 'hit',
   'function': Hit,
-  'admin': True,
   'registered': True,
   'help': "Hit (draw a new card on the current hand)"
 })
@@ -1067,7 +1065,6 @@ RegisterCommand({
   'module': __name__,
   'name': 'double',
   'function': Double,
-  'admin': True,
   'registered': True,
   'help': "Double down (double bet and draw a final card on the current hand)"
 })
@@ -1075,7 +1072,6 @@ RegisterCommand({
   'module': __name__,
   'name': 'stand',
   'function': Stand,
-  'admin': True,
   'registered': True,
   'help': "Stand (finish the current hand)"
 })
@@ -1083,7 +1079,6 @@ RegisterCommand({
   'module': __name__,
   'name': 'split',
   'function': Split,
-  'admin': True,
   'registered': True,
   'help': "Split current hand if first two cards are a pair - split to %d max" % config.blackjack_split_to
 })
@@ -1092,7 +1087,6 @@ if config.blackjack_insurance:
     'module': __name__,
     'name': 'insurance',
     'function': Insurance,
-    'admin': True,
     'registered': True,
     'help': "Insure against a dealer blackjack with half your bet (offered if the dealer's first card in an ace) - paid 2:1"
   })
@@ -1100,7 +1094,6 @@ RegisterCommand({
   'module': __name__,
   'name': 'hand',
   'function': Hand,
-  'admin': True,
   'registered': True,
   'help': "Show your and the dealer's current hands"
 })
@@ -1109,7 +1102,6 @@ RegisterCommand({
   'name': 'stats',
   'parms': '[<name>]',
   'function': GetBlackjackStats,
-  'admin': True,
   'registered': True,
   'help': "displays your blackjack stats"
 })
@@ -1118,7 +1110,6 @@ RegisterCommand({
   'name': 'resetstats',
   'parms': '[<name>]',
   'function': ResetBlackjackStats,
-  'admin': True,
   'registered': True,
   'help': "resets your Blackjack stats"
 })
@@ -1127,7 +1118,7 @@ if len(config.blackjack_sidebets) > 0:
     'module': __name__,
     'name': 'sidebets',
     'function': SideBets,
-    'admin': True,
+    'registered': True,
     'help': "List the available side bets"
   })
 RegisterCommand({
@@ -1135,7 +1126,6 @@ RegisterCommand({
   'name': 'playerseed',
   'parms': '<string>',
   'function': PlayerSeed,
-  'admin': True,
   'registered': True,
   'help': "set a custom seed to use in the hash calculation"
 })
@@ -1143,7 +1133,6 @@ RegisterCommand({
   'module': __name__,
   'name': 'seeds',
   'function': Seeds,
-  'admin': True,
   'registered': True,
   'help': "Show hash of your current server seed and your player seed"
 })
@@ -1152,7 +1141,6 @@ RegisterCommand({
   'name': 'utf8',
   'parms': '[on|off]',
   'function': UseUTF8,
-  'admin': True,
   'registered': True,
   'help': "Enable or disable use of UTF-8 to display cards"
 })
@@ -1160,7 +1148,6 @@ RegisterCommand({
   'module': __name__,
   'name': 'faircheck',
   'function': FairCheck,
-  'admin': True,
   'registered': True,
   'help': "Check provably fair rolls"
 })
@@ -1168,13 +1155,13 @@ RegisterCommand({
   'module': __name__,
   'name': 'fair',
   'function': Fair,
-  'admin': True,
+  'registered': True,
   'help': "describe the provably fair blackjack game"
 })
 RegisterCommand({
   'module': __name__,
   'name': 'faircode',
   'function': FairCode,
-  'admin': True,
+  'registered': True,
   'help': "Show sample Python code to check game fairness"
 })

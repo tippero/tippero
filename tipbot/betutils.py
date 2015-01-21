@@ -231,6 +231,13 @@ def RetrieveHouseBalance():
     house_balance = house_balance - ib
     user_balances+=ib
 
+  earmarked_balances=0
+  earmarked = redis_hgetall("earmarked")
+  for e in earmarked:
+    eb = long(redis_hget("earmarked", e))
+    house_balance = house_balance - eb
+    earmarked_balances+=eb
+
   rbal=long(redis_get('reserve_balance') or 0)
   if rbal:
     house_balance = house_balance - rbal
@@ -238,7 +245,7 @@ def RetrieveHouseBalance():
   if house_balance < 0:
     raise RuntimeError('Negative house balance')
     return
-  log_info('RetrieveHouseBalance: unlocked %s, users %s, reserve %s, house %s' % (AmountToString(unlocked_balance), AmountToString(user_balances), AmountToString(rbal), AmountToString(house_balance)))
+  log_info('RetrieveHouseBalance: unlocked %s, users %s, earmarked %s, reserve %s, house %s' % (AmountToString(unlocked_balance), AmountToString(user_balances), AmountToString(earmarked_balances), AmountToString(rbal), AmountToString(house_balance)))
   return house_balance
 
 def GetHouseBalance(link,cmd):

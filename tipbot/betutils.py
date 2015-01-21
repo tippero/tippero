@@ -244,11 +244,15 @@ def RetrieveHouseBalance():
 def GetHouseBalance(link,cmd):
   try:
     balance = RetrieveHouseBalance()
+    personal_balance=0
+    for network in networks:
+      identity=network.name+':'+config.tipbot_name
+      personal_balance += long(redis_hget('balances',identity) or 0)
   except Exception,e:
     log_error('Failed to retrieve house balance: %s' % str(e))
     link.send('An error occured')
     return
-  link.send('House balance: %s' % AmountToString(balance))
+  link.send('House balance: %s, %s personal balance: %s' % (AmountToString(balance), config.tipbot_name, AmountToString(personal_balance)))
 
 def ReserveBalance(link,cmd):
   rbal=GetParam(cmd,1)

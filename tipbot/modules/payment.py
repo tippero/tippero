@@ -114,6 +114,7 @@ def Help(link):
 RegisterModule({
   'name': __name__,
   'help': Help,
+  'idle': UpdateCoin
 })
 RegisterCommand({
   'module': __name__,
@@ -121,5 +122,4 @@ RegisterCommand({
   'function': Deposit,
   'help': "Show instructions about depositing %s" % coinspecs.name
 })
-RegisterIdleFunction(__name__,UpdateCoin)
 

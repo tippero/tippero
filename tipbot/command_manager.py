@@ -15,8 +15,6 @@ from tipbot.utils import *
 modules = dict()
 commands = dict()
 calltable=dict()
-idles = []
-cleanup = dict()
 
 def SendToProxy(link,msg):
   link.send(msg)
@@ -122,12 +120,6 @@ def RegisterCommand(command):
     commands[command['name']] = []
   commands[command['name']].append(command)
 
-def RegisterIdleFunction(module,function):
-  idles.append((module,function))
-
-def RegisterCleanupFunction(module,function):
-  cleanup.append((module,function))
-
 def OnCommand(link,cmd,check_admin,check_registered):
   cmdparts = cmd[0].split(':')
   log_log('cmdparts: %s' % str(cmdparts))
@@ -178,11 +170,13 @@ def OnCommand(link,cmd,check_admin,check_registered):
       link.send("Invalid command, try !help")
 
 def RunIdleFunctions(param=None):
-  for f in idles:
-    try:
-      f[1](param)
-    except Exception,e:
-      log_error("Exception running idle function %s from module %s: %s" % (str(f[1]),str(f[2]),str(e)))
+  for module in modules:
+    if 'idle' in modules[module]:
+      f=modules[module]['idle']
+      try:
+        f(param)
+      except Exception,e:
+        log_error("Exception running idle function %s from module %s: %s" % (str(f),module,str(e)))
 
 def RunModuleHelpFunction(module,link):
   if module in modules:
@@ -197,18 +191,12 @@ def UnregisterModule(module):
   global commands
   global idles
 
-  if module in cleanup:
-    cleanup[module]()
-    del cleanup[module]
+  if not module in modules:
+    log_error('Trying to unregister module %s, which is not registered' % module)
+    return
 
-  if module in modules:
-    del modules[module]
-
-  new_idles = []
-  for f in idles:
-    if f[0] != module:
-      new_idles.append(f)
-  idles = new_idles
+  if 'cleanup' in modules[module]:
+    modules[module]['cleanup']()
 
   new_commands = dict()
   for cmd in commands:
@@ -220,3 +208,4 @@ def UnregisterModule(module):
       new_commands[cmd] = newlist
   commands = new_commands
 
+  del modules[module]

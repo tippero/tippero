@@ -73,7 +73,7 @@ def IsPlayerBalanceAtLeast(link,units):
       balance = 0
     balance=long(balance)
     if units > balance:
-      log_error ('%s does not have enough balance' % link.user.nick)
+      log_info ('%s does not have enough balance' % link.user.nick)
       return False, "You only have %s" % (AmountToString(balance))
   except Exception,e:
     log_error ('failed to query balance')

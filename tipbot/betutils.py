@@ -43,10 +43,15 @@ def IsBetValid(link,amount,minbet,maxbet,potential_loss,max_loss,max_loss_ratio)
   units=long(amount*coinspecs.atomic_units)
   if units <= 0:
     return False, "Invalid amount"
-  if amount > maxbet:
+  if maxbet != None and amount > maxbet:
     return False, "Max bet is %s" % AmountToString(maxbet * coinspecs.atomic_units)
-  if amount < minbet:
+  if minbet != None and amount < minbet:
     return False, "Min bet is %s" % AmountToString(minbet * coinspecs.atomic_units)
+
+  enough, reason = IsPlayerBalanceAtLeast(link,units)
+  if not enough:
+    return False, reason
+
   if potential_loss > 0:
     if potential_loss > max_loss:
       return False, "Max potential loss is %s" % AmountToString(max_loss * coinspecs.atomic_units)

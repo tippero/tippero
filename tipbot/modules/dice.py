@@ -75,20 +75,6 @@ def Dice(link,cmd):
     return
 
   try:
-    balance = redis_hget("balances",identity)
-    if balance == None:
-      balance = 0
-    balance=long(balance)
-    if units > balance:
-      log_error ('%s does not have enough balance' % identity)
-      link.send("You only have %s" % (AmountToString(balance)))
-      return
-  except Exception,e:
-    log_error ('failed to query balance')
-    link.send("Failed to query balance")
-    return
-
-  try:
     rolls, roll = Roll(link)
   except:
     link.send("An error occured")

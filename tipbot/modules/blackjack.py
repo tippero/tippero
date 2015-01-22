@@ -575,10 +575,6 @@ def Blackjack(link,cmd):
     log_info("Dice: %s's bet refused: %s" % (identity, reason))
     link.send("%s: %s" % (link.user.nick, reason))
     return
-  enough, reason = IsPlayerBalanceAtLeast(link,total_units_wagered)
-  if not enough:
-    link.send("%s: %s" % (link.user.nick, reason))
-    return
 
   try:
     rolls, seed = GetNewShuffleSeed(link)

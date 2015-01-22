@@ -76,6 +76,15 @@ def redis_lindex(k,n):
 def redis_zincrby(t,k,s):
   return redisdb.zincrby(t,k,s)
 
+def redis_zscore(t,k):
+  return redisdb.zscore(t,k)
+
+def redis_zrangebylex(t,x0,x1):
+  return redisdb.zrangebylex(t,x0,x1)
+
+def redis_keys(s):
+  return redisdb.keys(s)
+
 def redis_delete(k):
   return redisdb.delete(k)
 
@@ -101,6 +110,9 @@ def CompatibilityCheck():
     if not p.lpop: raise RuntimeError('lpop call not found')
     if not p.lindex: raise RuntimeError('lindex call not found')
     if not p.zincrby: raise RuntimeError('zincrby call not found')
+    if not p.zscore: raise RuntimeError('zscore call not found')
+    if not p.zrangebylex: raise RuntimeError('zrangebylex call not found')
+    if not p.keys: raise RuntimeError('keys call not found')
     if not p.execute: raise RuntimeError('execute call not found')
     if not p.delete: raise RuntimeError('delete call not found')
   except Exception,e:

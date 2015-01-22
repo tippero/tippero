@@ -358,6 +358,46 @@ def Unban(link,cmd):
     link.send('An error occured')
     return
 
+def Report(link,cmd):
+  GetHouseBalance(link,cmd)
+  games=[]
+  try:
+    keys=redis_keys('*:zstats:daily:*')
+    for key in keys:
+      game=key.split(':')[0]
+      if game not in games:
+        games.append(game)
+  except Exception,e:
+    log_error('Failed to enumerate games: %s' % str(e))
+    link.send('Failed to enumerate games')
+    return
+  now=datetime.datetime.utcnow()
+  for game in games:
+    try:
+      ShowGameStats(link,'',game,game)
+      period={1:'yesterday',7:'last week',30:'last month'}
+      zdtname="%s:zstats:daily:"%game
+      bets=0
+      wagered=0
+      won=0
+      lost=0
+      for days in range(1,31):
+        ts=now-datetime.timedelta(days=days)
+        tsd="%u-%02u-%02u" % (ts.year,ts.month,ts.day)
+        bets+=long(redis_zscore(zdtname+"bets",tsd) or 0)
+        wagered+=long(redis_zscore(zdtname+"wagered",tsd) or 0)
+        won+=long(redis_zscore(zdtname+"won",tsd) or 0)
+        lost+=long(redis_zscore(zdtname+"lost",tsd) or 0)
+        if days in period.keys():
+          if won>lost:
+            balance_change="+"+AmountToString(won-lost)
+          else:
+            balance_change="-"+AmountToString(lost-won)
+          link.send('%s: %d bets %s, %s wagered, %s house balance change' % (game,bets,period[days],AmountToString(wagered),balance_change))
+    except Exception,e:
+      log_error('Failed to generate report for %s: %s' % (game,str(e)))
+      link.send('Failed to generate report for %s' % game)
+
 RegisterCommand({
   'module': 'betting',
   'name': 'reserve_balance',
@@ -387,4 +427,11 @@ RegisterCommand({
   'function': Unban,
   'admin': True,
   'help': "unban someone from playing"
+})
+RegisterCommand({
+  'module': 'betting',
+  'name': 'report',
+  'function': Report,
+  'admin': True,
+  'help': "Betting report"
 })

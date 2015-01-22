@@ -530,7 +530,7 @@ def GetBasicStrategyMove(link):
     if player_score >= 5:
       return "hit"
 
-  log_error('GetBasicStrategyMove: missed a case: player %s, dealer %s', HandToString(player_hand), HandToString(dealer_hand))
+  log_error('GetBasicStrategyMove: missed a case: player %s, dealer %s' % (HandToString(player_hand), HandToString(dealer_hand)))
   return None
 
 def RecordMove(link,actual):

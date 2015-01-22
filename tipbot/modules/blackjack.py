@@ -423,6 +423,9 @@ def GetBasicStrategyMove(link):
   dealer_hand = players[identity]['dealer_hand']
   dealer_upcard = dealer_hand[0].split(':')[0]
 
+  if player_score == 21:
+    return "stand"
+
   if player_has_split:
     if player_first_card == 'A':
       return "stand"

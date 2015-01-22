@@ -723,6 +723,7 @@ def Insurance(link,cmd):
     return
   if IsBlackjack(dealer_hand):
     Lose(link,True)
+    # From here on, players[identity] is deleted
     win_insurance_units = insurance_units * 2
     link.send('%s wins %s insurance - dealer had a blackjack - %s' % (link.user.nick, AmountToString(win_insurance_units), HandToString(dealer_hand,identity in utf8users,False,False)))
     UpdateSidebetRecord(link,"insurance",True,False,win_insurance_units)
@@ -730,7 +731,8 @@ def Insurance(link,cmd):
     link.send('%s loses %s insurance - dealer had no blackjack' % (link.user.nick, AmountToString(insurance_units)))
     UpdateSidebetRecord(link,"insurance",False,True,insurance_units)
     link.send("%s: Your hand is %s. Dealer's hand is %s" % (link.user.nick, PlayerHandsToString(link,True),HandToString(dealer_hand,identity in utf8users,True,False)))
-  players[identity]['insurance'] = True
+  if identity in players:
+    players[identity]['insurance'] = True
 
 def IsCurrentPlayerHandASplitAce(link):
   identity=link.identity()

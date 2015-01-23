@@ -585,6 +585,7 @@ def Blackjack(link,cmd):
   players[identity] = {
     'deck': MakeNewDeck(config.blackjack_decks,seed),
     'amount': total_units_wagered,
+    'base_amount': units,
     'player_hands': [dict({
       'amount': units,
       'hand': [],
@@ -818,6 +819,7 @@ def Split(link,cmd):
   if not enough:
     link.send("%s: %s - please refund your account to continue playing" % (link.user.nick, reason))
     return
+  idx = players[identity]['player_current_hand']
   hand = GetPlayerCurrentHand(link)
   if len(hand)!=2 or GetCardScore(hand[0])!=GetCardScore(hand[1]):
     link.send("%s: only pairs with the same value can be split" % (link.user.nick))
@@ -825,12 +827,11 @@ def Split(link,cmd):
   if len(players[identity]['player_hands']) >= config.blackjack_split_to:
     link.send("%s: you can only split to %d" % (link.user.nick, config.blackjack_split_to))
     return
-  enough, reason = IsPlayerBalanceAtLeast(link,units*2)
+  enough, reason = IsPlayerBalanceAtLeast(link,units+players[identity]['base_amount'])
   if not enough:
     link.send("%s: you do not have enough %s in your account to split hand %d" % (link.user.nick,coinspecs.name,idx+1))
     return
-  players[identity]['amount'] = players[identity]['amount'] * 2 
-  idx = players[identity]['player_current_hand']
+  players[identity]['amount'] = players[identity]['amount'] + players[identity]['base_amount']
   RecordMove(link,"split")
   log_log('splitting hand %d' % idx)
   split_card = hand[0]

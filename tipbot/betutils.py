@@ -395,10 +395,12 @@ def Report(link,cmd):
         lost+=long(redis_zscore(zdtname+"lost",tsd) or 0)
         if days in period.keys():
           if won>lost:
-            balance_change="+"+AmountToString(won-lost)
+            wonlost='lost'
+            balance_change=AmountToString(won-lost)
           else:
-            balance_change="-"+AmountToString(lost-won)
-          link.send('%s: %d bets %s, %s wagered, %s house balance change' % (game,bets,period[days],AmountToString(wagered),balance_change))
+            wonlost='won'
+            balance_change=AmountToString(lost-won)
+          link.send('%s, %s: %d bets, %s wagered, house %s %s' % (game,period[days],bets,AmountToString(wagered),wonlost,balance_change))
     except Exception,e:
       log_error('Failed to generate report for %s: %s' % (game,str(e)))
       link.send('Failed to generate report for %s' % game)

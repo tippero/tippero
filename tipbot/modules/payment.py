@@ -25,15 +25,15 @@ def GetTipbotAddress():
     j = SendWalletJSONRPCCommand("getaddress",None)
     if not "result" in j:
       log_error('GetTipbotAddress: No result found in getaddress reply')
-      return ERROR
+      return None
     result = j["result"]
     if not "address" in result:
       log_error('GetTipbotAddress: No address found in getaddress reply')
-      return ERROR
+      return None
     return result["address"]
   except Exception,e:
     log_error("GetTipbotAddress: Error retrieving %s's address: %s" % (config.tipbot_name, str(e)))
-    return "ERROR"
+    return None
 
 def UpdateCoin(data):
   global last_wallet_update_time
@@ -108,7 +108,8 @@ def Deposit(link,cmd):
 
 def Help(link):
   link.send_private("You can send %s to your account:" % coinspecs.name);
-  link.send_private("  Address: %s" % GetTipbotAddress())
+  address=GetTipbotAddress() or 'ERROR'
+  link.send_private("  Address: %s" % address)
   link.send_private("  Payment ID: %s" % GetPaymentID(link))
 
 RegisterModule({

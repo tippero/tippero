@@ -1051,7 +1051,7 @@ RegisterModule({
 RegisterCommand({
   'module': __name__,
   'name': 'blackjack',
-  'parms': '<amount-in-monero>' if len(config.blackjack_sidebets) == 0 else '<amount-in-monero> [sidebet1 [sidebet2...]]',
+  'parms': '<amount-in-%s>' % coinspecs.name if len(config.blackjack_sidebets) == 0 else '<amount-in-%s> [sidebet1 [sidebet2...]]' % coinspecs.name,
   'function': Blackjack,
   'registered': True,
   'help': "start a blackjack game - blackjack pays 3:2"

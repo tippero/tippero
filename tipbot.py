@@ -89,12 +89,8 @@ for modulename in modulenames:
 
 def GetBalance(link,cmd):
   nick=link.user.nick
-  log_log("GetBalance: checking %s (%s)" % (link.identity(),str(link)))
   try:
-    balance = redis_hget("balances",link.identity())
-    if balance == None:
-      balance = 0
-    balance = long(balance)
+    balance = RetrieveBalance(link)
     sbalance = AmountToString(balance)
     if balance < coinspecs.atomic_units:
       if balance == 0:

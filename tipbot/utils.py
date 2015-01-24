@@ -212,6 +212,16 @@ def RetrieveTipbotBalance():
     return
   return balance, unlocked_balance
 
+def RetrieveBalance(link):
+  try:
+    balance = redis_hget("balances",link.identity())
+    if balance == None:
+      balance = 0
+    return long(balance)
+  except Exception, e:
+    log_error('RetrieveBalance: exception: %s' % str(e))
+    raise
+
 def IdentityFromString(link,s):
   if s.find(':') == -1:
     network = link.network.name

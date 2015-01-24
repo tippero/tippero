@@ -834,10 +834,11 @@ def Split(link,cmd):
   players[identity]['amount'] = players[identity]['amount'] + players[identity]['base_amount']
   RecordMove(link,"split")
   log_log('splitting hand %d' % idx)
-  split_card = hand[0]
+  split_card_0 = hand[0]
+  split_card_1 = hand[1]
   players[identity]['player_hands'].insert(idx+1,players[identity]['player_hands'][idx].copy())
-  players[identity]['player_hands'][idx]['hand'] = [ split_card, DrawCard(players[identity]['deck']) ]
-  players[identity]['player_hands'][idx+1]['hand'] = [ split_card, DrawCard(players[identity]['deck']) ]
+  players[identity]['player_hands'][idx]['hand'] = [ split_card_0, DrawCard(players[identity]['deck']) ]
+  players[identity]['player_hands'][idx+1]['hand'] = [ split_card_1, DrawCard(players[identity]['deck']) ]
 
   sidebets = players[identity]['sidebets']
   if sidebets['splits']:

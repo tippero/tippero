@@ -266,7 +266,7 @@ def Disable(link,cmd):
 def OnIdle():
   if disabled:
     return
-  RunIdleFunctions([irc,redisdb])
+  RunIdleFunctions()
 
 def Quit(link,cmd):
   global networks
@@ -277,9 +277,6 @@ def Quit(link,cmd):
     log_info('Quitting %s network' % network.name)
     network.quit()
   networks = []
-
-def OnIdle():
-  RunIdleFunctions()
 
 def OnIdentified(link, identified):
   if disabled:

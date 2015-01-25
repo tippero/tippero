@@ -95,8 +95,6 @@ def UpdateCoin(data):
           pipe.execute()
         except Exception,e:
           log_error('UpdateCoin: failed to set scan_block_height: %s' % str(e))
-      else:
-        log_log('UpdateCoin: No payments in get_bulk_payments reply')
     else:
       log_error('UpdateCoin: No results in get_bulk_payments reply')
   except Exception,e:

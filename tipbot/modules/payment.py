@@ -52,6 +52,20 @@ def UpdateCoin(data):
       last_wallet_update_time = time.time()
       return
 
+    try:
+      j = SendDaemonHTMLCommand("getheight")
+    except Exception,e:
+      log_error('UpdateCoin: error getting height: %s' % str(e))
+      return
+    if not "height" in j:
+      log_error('UpdateCoin: error getting height: height not found in %s' % str(j))
+      return
+    try:
+      height=long(j["height"])
+    except Exception,e:
+      log_error('UpdateCoin: error getting height: %s' % str(e))
+      return
+
     full_payment_ids = redis_hgetall("paymentid")
     #print 'Got full payment ids: %s' % str(full_payment_ids)
     payment_ids = []
@@ -69,32 +83,49 @@ def UpdateCoin(data):
       if "payments" in result:
         payments = result["payments"]
         log_info('UpdateCoin: Got %d payments' % len(payments))
+        new_payments = []
+        n_confirming = 0
         for p in payments:
           log_log('UpdateCoin: Looking at payment %s' % str(p))
           bh = p["block_height"]
-          if bh > scan_block_height:
-            scan_block_height = bh
-        log_log('UpdateCoin: seen payments up to block %d' % scan_block_height)
-        try:
-          pipe = redis_pipeline()
-          pipe.set("scan_block_height", scan_block_height)
-          log_log('UpdateCoin: processing payments')
+          confirmations = height-1-bh
+          if confirmations >= config.payment_confirmations:
+            log_info('Payment %s is now confirmed' % str(p))
+            new_payments.append(p)
+          else:
+            log_info('Payment %s has %d/%d confirmations' % (str(p),confirmations,config.payment_confirmations))
+            n_confirming += 1
+        payments=new_payments
+        if len(payments) > 0:
           for p in payments:
-            payment_id=p["payment_id"]
-            tx_hash=p["tx_hash"]
-            amount=p["amount"]
-            try:
-              recipient = GetIdentityFromPaymentID(payment_id)
-              if not recipient:
-                raise RuntimeError('Payment ID %s not found' % payment_id)
-              log_info('UpdateCoin: Found payment %s to %s for %s' % (tx_hash,recipient, AmountToString(amount)))
-              pipe.hincrby("balances",recipient,amount);
-            except Exception,e:
-              log_error('UpdateCoin: No identity found for payment id %s, tx hash %s, amount %s: %s' % (payment_id, tx_hash, amount, str(e)))
-          log_log('UpdateCoin: Executing received payments pipeline')
-          pipe.execute()
-        except Exception,e:
-          log_error('UpdateCoin: failed to set scan_block_height: %s' % str(e))
+            if bh > scan_block_height:
+              scan_block_height = bh
+          log_info('UpdateCoin: Got %d mature payments and %d confirming payments' % (len(payments),n_confirming))
+          log_log('UpdateCoin: updated payments up to block %d' % scan_block_height)
+          try:
+            pipe = redis_pipeline()
+            pipe.set("scan_block_height", scan_block_height)
+            log_log('UpdateCoin: processing payments')
+            for p in payments:
+              payment_id=p["payment_id"]
+              tx_hash=p["tx_hash"]
+              amount=p["amount"]
+              bh = p["block_height"]
+              try:
+                recipient = GetIdentityFromPaymentID(payment_id)
+                if not recipient:
+                  raise RuntimeError('Payment ID %s not found' % payment_id)
+                log_info('UpdateCoin: Found payment %s to %s for %s' % (tx_hash,recipient, AmountToString(amount)))
+                if bh < height-config.payment_confirmations:
+                  pipe.hincrby("balances",recipient,amount)
+                else:
+                  log_log('%d/%d confirmations' % (height-1-bh,config.payment_confirmations))
+              except Exception,e:
+                log_error('UpdateCoin: No identity found for payment id %s, tx hash %s, amount %s: %s' % (payment_id, tx_hash, amount, str(e)))
+            log_log('UpdateCoin: Executing received payments pipeline')
+            pipe.execute()
+          except Exception,e:
+            log_error('UpdateCoin: failed to set scan_block_height: %s' % str(e))
     else:
       log_error('UpdateCoin: No results in get_bulk_payments reply')
   except Exception,e:

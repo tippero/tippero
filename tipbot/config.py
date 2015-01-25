@@ -34,6 +34,7 @@ withdrawal_fee=None # None defaults to the network default fee
 min_withdraw_amount = None # None defaults to the withdrawal fee
 withdrawal_mixin=0
 disable_withdraw_on_error = True
+payment_confirmations = 6
 
 admins = ["freenode:moneromooo", "freenode:moneromoo"]
 

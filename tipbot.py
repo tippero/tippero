@@ -339,6 +339,19 @@ def MigrateRedis():
         redisdb.hset(hname,newkey,redisdb.hget(hname,key))
         redisdb.hdel(hname,key)
 
+  keys=redisdb.keys('*')
+  for key in keys:
+    if key.find(":zstats:") >= 0 and key.find(":freenode:") < 0:
+      altkey=key.replace(":zstats:",":zstats:freenode:")
+      if not redisdb.exists(altkey):
+        log_info('copying %s to %s' % (key,altkey))
+        redisdb.restore(altkey,0,redisdb.dump(key))
+    elif key.endswith(":stats:"):
+      altkey=key.replace(":stats:",":stats:freenode:")
+      if not redisdb.exists(altkey):
+        log_info('copying %s to %s' % (key,altkey))
+        redisdb.restore(altkey,0,redisdb.dump(key))
+
 RegisterCommands()
 redisdb = connect_to_redis(config.redis_host,config.redis_port)
 MigrateRedis()

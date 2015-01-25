@@ -250,14 +250,14 @@ def RetrieveHouseBalance():
   user_balances=0
   identities = redis_hgetall("balances")
   for identity in identities:
-    ib = long(redis_hget("balances", identity))
+    ib = long(identities[identity])
     house_balance = house_balance - ib
     user_balances+=ib
 
   earmarked_balances=0
   earmarked = redis_hgetall("earmarked")
   for e in earmarked:
-    eb = long(redis_hget("earmarked", e))
+    eb = long(earmarked[e])
     house_balance = house_balance - eb
     earmarked_balances+=eb
 

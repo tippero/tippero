@@ -188,9 +188,9 @@ def SendDaemonJSONRPCCommand(method,params):
 def SendDaemonHTMLCommand(method):
   return SendHTMLCommand(config.daemon_host,config.daemon_port,method)
 
-def RetrieveTipbotBalance():
+def RetrieveTipbotBalance(force_refresh=False):
   global cached_tipbot_balance, cached_tipbot_unlocked_balance, cached_tipbot_balance_timestamp
-  if cached_tipbot_balance_timestamp and time.time()-cached_tipbot_balance_timestamp < config.tipbot_balance_cache_time:
+  if not force_refresh and cached_tipbot_balance_timestamp and time.time()-cached_tipbot_balance_timestamp < config.tipbot_balance_cache_time:
     return cached_tipbot_balance, cached_tipbot_unlocked_balance
 
   j = SendWalletJSONRPCCommand("getbalance",None)

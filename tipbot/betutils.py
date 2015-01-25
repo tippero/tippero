@@ -264,8 +264,8 @@ def ResetGameStats(link,sidentity,game):
     log_error('Error resetting %s stats for %s: %s' % (game,sidentity,str(e)))
     raise
 
-def RetrieveHouseBalance():
-  balance, unlocked_balance = RetrieveTipbotBalance()
+def RetrieveHouseBalance(force_refresh=False):
+  balance, unlocked_balance = RetrieveTipbotBalance(force_refresh)
   house_balance = unlocked_balance
 
   user_balances=0

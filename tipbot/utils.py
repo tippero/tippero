@@ -13,12 +13,16 @@ import redis
 import hashlib
 import json
 import httplib
+import time
 import tipbot.config as config
 import tipbot.coinspecs as coinspecs
 from tipbot.log import log_error, log_warn, log_info, log_log
 from tipbot.redisdb import *
 
 networks=[]
+cached_tipbot_balance=None
+cached_tipbot_unlocked_balance=None
+cached_tipbot_balance_timestamp=None
 
 def GetPassword():
   try:
@@ -185,6 +189,10 @@ def SendDaemonHTMLCommand(method):
   return SendHTMLCommand(config.daemon_host,config.daemon_port,method)
 
 def RetrieveTipbotBalance():
+  global cached_tipbot_balance, cached_tipbot_unlocked_balance, cached_tipbot_balance_timestamp
+  if cached_tipbot_balance_timestamp and time.time()-cached_tipbot_balance_timestamp < config.tipbot_balance_cache_time:
+    return cached_tipbot_balance, cached_tipbot_unlocked_balance
+
   j = SendWalletJSONRPCCommand("getbalance",None)
   if not "result" in j:
     log_error('RetrieveTipbotBalance: result not found in reply')
@@ -208,6 +216,9 @@ def RetrieveTipbotBalance():
     log_error('RetrieveTipbotBalance: Negative pending balance! balance %s, unlocked %s' % (str(balance),str(unlocked_balance)))
     raise RuntimeError("")
     return
+  cached_tipbot_balance_timestamp=time.time()
+  cached_tipbot_balance=balance
+  cached_tipbot_unlocked_balance=unlocked_balance
   return balance, unlocked_balance
 
 def RetrieveBalance(link):

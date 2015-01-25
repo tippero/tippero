@@ -35,6 +35,7 @@ min_withdraw_amount = None # None defaults to the withdrawal fee
 withdrawal_mixin=0
 disable_withdraw_on_error = True
 payment_confirmations = 6
+tipbot_balance_cache_time = 35 # seconds
 
 admins = ["freenode:moneromooo", "freenode:moneromoo"]
 

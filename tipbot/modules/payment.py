@@ -82,7 +82,6 @@ def UpdateCoin(data):
       result = j["result"]
       if "payments" in result:
         payments = result["payments"]
-        log_info('UpdateCoin: Got %d payments' % len(payments))
         new_payments = []
         n_confirming = 0
         for p in payments:
@@ -96,11 +95,11 @@ def UpdateCoin(data):
             log_info('Payment %s has %d/%d confirmations' % (str(p),confirmations,config.payment_confirmations))
             n_confirming += 1
         payments=new_payments
+        log_info('UpdateCoin: Got %d mature payments and %d confirming payments' % (len(payments),n_confirming))
         if len(payments) > 0:
           for p in payments:
             if bh > scan_block_height:
               scan_block_height = bh
-          log_info('UpdateCoin: Got %d mature payments and %d confirming payments' % (len(payments),n_confirming))
           log_log('UpdateCoin: updated payments up to block %d' % scan_block_height)
           try:
             pipe = redis_pipeline()

@@ -55,8 +55,8 @@ def Dice(link,cmd):
   except Exception,e:
     link.send("Usage: dice amount multiplier [over|under]")
     return
-  if multiplier < 1.1 or multiplier > 10:
-    link.send("Invalid multiplier: should be between 1.1 and 10")
+  if multiplier < float(config.dice_min_multiplier) or multiplier > float(config.dice_max_multiplier):
+    link.send("Invalid multiplier: should be between %f and %f" % (config.dice_min_multiplier, config.dice_max_multiplier))
     return
   if overunder == "over":
     under=False

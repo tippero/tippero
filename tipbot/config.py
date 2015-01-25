@@ -45,6 +45,8 @@ silent_invalid_commands = {
   'freenode': ['price','worth','net','pools','calc']
 }
 
+dice_min_multiplier=1.1
+dice_max_multiplier=10
 dice_edge = 0.01
 dice_max_bet = 5
 dice_min_bet = 0.001

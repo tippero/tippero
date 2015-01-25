@@ -177,7 +177,6 @@ class IRCNetwork(Network):
         #ScanWho(None,[chan])
 
     if data.find ( 'PING' ) == 0:
-      log_log('Got PING, replying PONG')
       self.last_ping_time = time.time()
       self._irc_sendmsg ( 'PONG ' + data.split() [ 1 ])
       return True

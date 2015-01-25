@@ -131,13 +131,12 @@ def SendJSONRPCCommand(host,port,method,params):
     http.close()
     raise
   response = http.getresponse()
-  log_log('SendJSONRPCCommand: Received reply status: %s' % response.status)
   if response.status != 200:
-    log_error('SendJSONRPCCommand: Error, not 200: %s' % str(response.status))
+    log_error('SendJSONRPCCommand: Error, received reply status %s' % str(response.status))
     http.close()
     raise RuntimeError("Error "+response.status)
   s = response.read()
-  log_log('SendJSONRPCCommand: Received reply: %s' % str(s))
+  log_log('SendJSONRPCCommand: Received reply status %s: %s' % (response.status, str(s).replace('\r\n',' ').replace('\n',' ')))
   try:
     j = json.loads(s)
   except Exception,e:

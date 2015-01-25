@@ -139,6 +139,7 @@ def Help(link):
   address=GetTipbotAddress() or 'ERROR'
   link.send_private("  Address: %s" % address)
   link.send_private("  Payment ID: %s" % GetPaymentID(link))
+  link.send_private("Incoming transactions are credited after %d confirmations" % config.payment_confirmations)
 
 RegisterModule({
   'name': __name__,

@@ -17,6 +17,7 @@ class Link:
     self.user=user
     self.group=group
     self.data=data
+    self.identity_string = self.network.name+":"+self.user.nick
     self.batch_message = None
     self.batch_message_private = None
 
@@ -24,7 +25,7 @@ class Link:
     return '<link: network %s, user %s, group %s, data %s>' % (str(self.network),str(self.user),str(self.group),str(self.data))
 
   def identity(self):
-    return self.network.name+":"+self.user.nick
+    return self.identity_string
 
   def send(self,msg):
     if self.batch_message != None:

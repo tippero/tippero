@@ -160,13 +160,12 @@ def SendHTMLCommand(host,port,method):
     http.close()
     raise
   response = http.getresponse()
-  log_log('SendHTMLCommand: Received reply status: %s' % response.status)
   if response.status != 200:
-    log_error('SendHTMLCommand: Error, not 200: %s' % str(response.status))
+    log_error('SendHTMLCommand: Error, received reply status %s' % str(response.status))
     http.close()
     raise RuntimeError("Error "+response.status)
   s = response.read()
-  log_log('SendHTMLCommand: Received reply: %s' % s)
+  log_log('SendHTMLCommand: Received reply status %s: %s' % (response.status,s.replace('\r\n',' ').replace('\n',' ')))
   try:
     j = json.loads(s)
   except Exception,e:

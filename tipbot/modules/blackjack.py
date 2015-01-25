@@ -415,7 +415,7 @@ def GetBasicStrategyMove(link):
   player_has_soft_hand = IsSoftHand(player_hand)
   player_can_double = len(player_hand) == 2
   player_has_split = len(players[identity]['player_hands']) > 1
-  player_can_split = len(players[identity]['player_hands']) < config.blackjack_split_to
+  player_can_split = len(player_hand) == 2 and len(players[identity]['player_hands']) < config.blackjack_split_to
   player_score = GetHandScore(player_hand)
   player_first_card = player_hand[0].split(':')[0]
   player_second_card = player_hand[1].split(':')[0]

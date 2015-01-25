@@ -64,6 +64,9 @@ def redis_sadd(k,v):
 def redis_smembers(k):
   return redisdb.smembers(k)
 
+def redis_sismember(k,v):
+  return redisdb.sismember(k,v)
+
 def redis_rpush(k,v):
   return redisdb.rpush(k,v)
 
@@ -106,6 +109,7 @@ def CompatibilityCheck():
     if not p.incrby: raise RuntimeError('incrby call not found')
     if not p.sadd: raise RuntimeError('sadd call not found')
     if not p.smembers: raise RuntimeError('smembers call not found')
+    if not p.sismember: raise RuntimeError('sismember call not found')
     if not p.rpush: raise RuntimeError('rpush call not found')
     if not p.lpop: raise RuntimeError('lpop call not found')
     if not p.lindex: raise RuntimeError('lindex call not found')

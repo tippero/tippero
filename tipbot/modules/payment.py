@@ -84,23 +84,31 @@ def UpdateCoin(data):
         payments = result["payments"]
         new_payments = []
         n_confirming = 0
+        new_scan_block_height = scan_block_height
         for p in payments:
-          log_log('UpdateCoin: Looking at payment %s' % str(p))
+          tx_hash = p["tx_hash"]
           bh = p["block_height"]
+          ut = p["block_height"]
+          if redis_sismember("processed_txs",tx_hash):
+            continue
+          log_log('UpdateCoin: Looking at payment %s' % str(p))
           confirmations = height-1-bh
-          if confirmations >= config.payment_confirmations:
+          confirmations_needed = max(config.payment_confirmations,ut-height)
+          if confirmations >= confirmations_needed:
             log_info('Payment %s is now confirmed' % str(p))
             new_payments.append(p)
+            if new_scan_block_height and bh > new_scan_block_height:
+              new_scan_block_height = bh
           else:
-            log_info('Payment %s has %d/%d confirmations' % (str(p),confirmations,config.payment_confirmations))
+            log_info('Payment %s has %d/%d confirmations' % (str(p),confirmations,confirmations_needed))
             n_confirming += 1
+            new_scan_block_height = None
         payments=new_payments
         log_info('UpdateCoin: Got %d mature payments and %d confirming payments' % (len(payments),n_confirming))
         if len(payments) > 0:
-          for p in payments:
-            if bh > scan_block_height:
-              scan_block_height = bh
-          log_log('UpdateCoin: updated payments up to block %d' % scan_block_height)
+          if new_scan_block_height and new_scan_block_height > scan_block_height:
+            scan_block_height = new_scan_block_height
+            log_log('UpdateCoin: increasing scan_block_height to %d' % scan_block_height)
           try:
             pipe = redis_pipeline()
             pipe.set("scan_block_height", scan_block_height)
@@ -110,15 +118,14 @@ def UpdateCoin(data):
               tx_hash=p["tx_hash"]
               amount=p["amount"]
               bh = p["block_height"]
+              ut = p["unlock_time"]
               try:
                 recipient = GetIdentityFromPaymentID(payment_id)
                 if not recipient:
                   raise RuntimeError('Payment ID %s not found' % payment_id)
                 log_info('UpdateCoin: Found payment %s to %s for %s' % (tx_hash,recipient, AmountToString(amount)))
-                if bh < height-config.payment_confirmations:
-                  pipe.hincrby("balances",recipient,amount)
-                else:
-                  log_log('%d/%d confirmations' % (height-1-bh,config.payment_confirmations))
+                pipe.hincrby("balances",recipient,amount)
+                pipe.sadd("processed_txs",tx_hash)
               except Exception,e:
                 log_error('UpdateCoin: No identity found for payment id %s, tx hash %s, amount %s: %s' % (payment_id, tx_hash, amount, str(e)))
             log_log('UpdateCoin: Executing received payments pipeline')

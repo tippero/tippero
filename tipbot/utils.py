@@ -107,7 +107,7 @@ def TimeToString(seconds):
     return "%.2f centuries" % (seconds / (3600*24*365.25 * 100))
   if seconds < 3600 * 24 * 365.25 * 1000000:
     return "%.2f millenia" % (seconds / (3600*24*365.25 * 100))
-  return " like, forever, dude"
+  return "like, forever, dude"
 
 def SendJSONRPCCommand(host,port,method,params):
   try:

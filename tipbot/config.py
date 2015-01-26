@@ -18,9 +18,6 @@ irc_send_delay = 0.4
 irc_welcome_line = 'Welcome to the freenode Internet Relay Chat Network'
 irc_channels = ['#txtptest000']
 irc_timeout_seconds = 600
-irc_use_ssl = True
-irc_use_sasl = True
-irc_sasl_name = "monero-tipbot"
 
 redis_host="127.0.0.1"
 redis_port=7777
@@ -45,6 +42,18 @@ no_rain_to_nicks = []
 # commands used by other bots, to avoid "unknown command" complaints
 silent_invalid_commands = {
   'freenode': ['price','worth','net','pools','calc']
+}
+
+network_config = {
+  'freenode': {
+    'host': 'irc.freenode.net',
+    'port': 6697,
+    'login': tipbot_name,
+    'delay': irc_send_delay,
+    'ssl': True,
+    'sasl': True,
+    'sasl_name': 'monero-tipbot',
+  },
 }
 
 dice_min_multiplier=1.1

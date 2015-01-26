@@ -22,6 +22,7 @@ import httplib
 import time
 import string
 import importlib
+import re
 import tipbot.coinspecs as coinspecs
 import tipbot.config as config
 from tipbot.log import log_error, log_warn, log_info, log_log
@@ -36,6 +37,7 @@ disabled = False
 
 selected_coin = None
 modulenames = []
+start_networks = []
 argc = 1
 while argc < len(sys.argv):
   arg = sys.argv[argc]
@@ -60,7 +62,24 @@ while argc < len(sys.argv):
       log_error('Usage: tipbot.py [-m|--module modulename]* -c|--coin <coinname>')
       exit(1)
     argc = argc+1
-    modulenames.append(sys.argv[argc])
+    arg = sys.argv[argc]
+    if not arg in modulenames:
+      modulenames.append(arg)
+  elif arg == "-n" or arg == "--network":
+    if argc+1 == len(sys.argv):
+      log_error('Usage: tipbot.py [-m|--module modulename]* -c|--coin <coinname>')
+      exit(1)
+    argc = argc+1
+    arg = sys.argv[argc]
+    if re.match('[^:]+:.+',arg):
+      parts=arg.split(':',1)
+      if not parts[1] in modulenames:
+        modulenames.append(parts[1])
+      start_networks.append({'name':parts[0],'type':parts[1]})
+    else:
+      if not arg in modulenames:
+        modulenames.append(arg)
+      start_networks.append({'type':arg})
   elif arg == "-h" or arg == "--help":
     log_info('Usage: tipbot.py [-m|--module modulename]* -c|--coin <coinname>')
     exit(0)
@@ -361,10 +380,24 @@ MigrateRedis()
 InitScanBlockHeight()
 
 # TODO: make this be created when the module is loaded
-irc = sys.modules["freenode"].FreenodeNetwork()
-irc.set_callbacks(OnCommandProxy,OnIdentified)
-if irc.connect(config.irc_network,config.irc_port,config.tipbot_name,GetPassword(),config.irc_send_delay):
-  AddNetwork(irc)
+for network_setup in start_networks:
+  network_type=network_setup['type']
+  if 'name' in network_setup:
+    network_name=network_setup['name']
+    log_info('Starting "%s" %s network' % (network_name, network_type))
+  else:
+    network_name=network_type
+    log_info('Starting %s network' % network_type)
+
+  name=network_name or network_type
+  try:
+    network=registered_networks[network_type](name=name)
+    network.set_callbacks(OnCommandProxy,OnIdentified)
+    if network.connect():
+      AddNetwork(network)
+  except Exception,e:
+    log_error('Error starting %s network: %s' % (name,str(e)))
+    exit(1)
 
 while len(networks)>0:
   for network in networks:

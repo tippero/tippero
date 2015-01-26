@@ -44,7 +44,21 @@ class IRCNetwork(Network):
     self.quitting = False
     self.buffered_data = ""
 
-  def connect(self,host,port,login,password,delay):
+  def connect(self):
+    try:
+      cfg=config.network_config[self.name]
+      host=cfg['host']
+      port=cfg['port']
+      login=cfg['login']
+      password=GetPassword(self.name)
+      delay=cfg['delay']
+      self.use_ssl=cfg['ssl']
+      self.use_sasl=cfg['sasl']
+      if self.use_sasl:
+        self.sasl_name=cfg['sasl_name']
+    except Exception,e:
+      log_error('Configuration not found for %s: %s' % (self.name, str(e)))
+      return False
     return self._connect(host,port,login,password,delay)
 
   def disconnect(self):
@@ -170,7 +184,7 @@ class IRCNetwork(Network):
     if data.find ( config.irc_welcome_line ) != -1:
       self.userstable = dict()
       self.registered_users.clear()
-      if not config.irc_use_sasl:
+      if not self.use_sasl:
         self.login()
       for chan in config.irc_channels:
         self.join(chan)
@@ -182,8 +196,8 @@ class IRCNetwork(Network):
       return True
 
     if data.startswith('AUTHENTICATE +'):
-      if config.irc_use_sasl:
-        authstring = config.irc_sasl_name + chr(0) + config.irc_sasl_name + chr(0) + self.password
+      if self.use_sasl:
+        authstring = self.sasl_name + chr(0) + self.sasl_name + chr(0) + self.password
         self._irc_sendmsg('AUTHENTICATE %s' % base64.b64encode(authstring))
       else:
         log_warn('Got AUTHENTICATE while not using SASL')
@@ -370,13 +384,13 @@ class IRCNetwork(Network):
     log("IRCSEND",msg)
 
   def _irc_recv(self,size,flags=None):
-    if config.irc_use_ssl:
+    if self.use_ssl:
       return self.sslirc.read(size)
     else:
       return self.irc.recv(size,flags)
 
   def _irc_send(self,data):
-    if config.irc_use_ssl:
+    if self.use_ssl:
       return self.sslirc.write(data)
     else:
       return self.irc.send(data)
@@ -447,7 +461,7 @@ class IRCNetwork(Network):
     self.registered_users=set()
     try:
       self.irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
-      if config.irc_use_ssl:
+      if self.use_ssl:
         try:
           raise RuntimeError('')
           self.irc_ssl_context = ssl.create_default_context()
@@ -461,7 +475,7 @@ class IRCNetwork(Network):
       log_error( 'Error initializing IRC: %s' % str(e))
       return False
     self._log_IRCRECV(self._irc_recv(4096))
-    if config.irc_use_sasl:
+    if self.use_sasl:
       self._irc_sendmsg('CAP REQ :sasl')
     else:
       self._irc_sendmsg ( 'PASS *********')
@@ -518,3 +532,4 @@ RegisterCommand({
   'admin': True,
   'help': "Makes %s part from a channel" % (config.tipbot_name)
 })
+RegisterNetwork("irc",IRCNetwork)

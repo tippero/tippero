@@ -18,8 +18,8 @@ from tipbot.command_manager import *
 from irc import *
 
 class FreenodeNetwork(IRCNetwork):
-  def __init__(self):
-    IRCNetwork.__init__(self,"freenode")
+  def __init__(self,name):
+    IRCNetwork.__init__(self,name)
 
   def login(self):
     self.send_to("nickserv", "IDENTIFY %s" % self.password)
@@ -52,3 +52,4 @@ class FreenodeNetwork(IRCNetwork):
           log_error('ACC line not as expected...')
     return True
 
+RegisterNetwork("freenode",FreenodeNetwork)

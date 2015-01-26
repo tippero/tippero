@@ -19,22 +19,26 @@ import tipbot.coinspecs as coinspecs
 from tipbot.log import log_error, log_warn, log_info, log_log
 from tipbot.redisdb import *
 
+registered_networks=dict()
 networks=[]
 cached_tipbot_balance=None
 cached_tipbot_unlocked_balance=None
 cached_tipbot_balance_timestamp=None
 
-def GetPassword():
+def GetPassword(name):
   try:
     f = open('tipbot-password.txt', 'r')
     for p in f:
       p = p.strip("\r\n")
-      f.close()
-      return p
+      parts=p.split(':')
+      if parts[0]==name:
+        return parts[1]
   except Exception,e:
     log_error('could not fetch password: %s' % str(e))
     raise
     return "xxx"
+  finally:
+    f.close()
 
 def IsParamPresent(parms,idx):
   return len(parms) > idx
@@ -242,6 +246,9 @@ def IdentityFromString(link,s):
 
 def NickFromIdentity(identity):
   return identity.split(':')[1]
+
+def RegisterNetwork(name,type):
+  registered_networks[name]=type
 
 def AddNetwork(network):
   networks.append(network)

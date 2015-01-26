@@ -90,15 +90,18 @@ for modulename in modulenames:
 def GetBalance(link,cmd):
   nick=link.user.nick
   try:
-    balance = RetrieveBalance(link)
+    balance,confirming = RetrieveBalance(link)
     sbalance = AmountToString(balance)
     if balance < coinspecs.atomic_units:
       if balance == 0:
-        link.send("%s's balance is %s" % (nick, sbalance))
+        msg="%s's balance is %s" % (nick, sbalance)
       else:
-        link.send("%s's balance is %s (%.16g %s)" % (nick, sbalance, float(balance) / coinspecs.atomic_units, coinspecs.name))
+        msg="%s's balance is %s (%.16g %s)" % (nick, sbalance, float(balance) / coinspecs.atomic_units, coinspecs.name)
     else:
-      link.send("%s's balance is %s" % (nick, sbalance))
+      msg="%s's balance is %s" % (nick, sbalance)
+    if confirming > 0:
+      msg = msg + " (%s awaiting confirmation)" % (AmountToString(confirming))
+    link.send(msg)
   except Exception, e:
     log_error('GetBalance: exception: %s' % str(e))
     link.send("An error has occured")

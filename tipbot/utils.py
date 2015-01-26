@@ -223,10 +223,9 @@ def RetrieveTipbotBalance(force_refresh=False):
 
 def RetrieveBalance(link):
   try:
-    balance = redis_hget("balances",link.identity())
-    if balance == None:
-      balance = 0
-    return long(balance)
+    balance = redis_hget("balances",link.identity()) or 0
+    confirming = redis_hget("confirming_payments",link.identity()) or 0
+    return long(balance), long(confirming)
   except Exception, e:
     log_error('RetrieveBalance: exception: %s' % str(e))
     raise

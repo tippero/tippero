@@ -80,15 +80,19 @@ def UpdateCoin(data):
     #print 'Got j: %s' % str(j)
     if "result" in j:
       result = j["result"]
+      cp = redis_pipeline()
+      cp.delete('confirming_payments')
       if "payments" in result:
         payments = result["payments"]
         new_payments = []
         n_confirming = 0
         new_scan_block_height = scan_block_height
         for p in payments:
+          payment_id=p["payment_id"]
           tx_hash = p["tx_hash"]
           bh = p["block_height"]
           ut = p["block_height"]
+          amount=p["amount"]
           if redis_sismember("processed_txs",tx_hash):
             continue
           log_log('UpdateCoin: Looking at payment %s' % str(p))
@@ -103,6 +107,14 @@ def UpdateCoin(data):
             log_info('Payment %s has %d/%d confirmations' % (str(p),confirmations,confirmations_needed))
             n_confirming += 1
             new_scan_block_height = None
+            try:
+              recipient = GetIdentityFromPaymentID(payment_id)
+              if not recipient:
+                raise RuntimeError('Payment ID %s not found' % payment_id)
+              log_info('UpdateCoin: Found payment %s to %s for %s' % (tx_hash,recipient, AmountToString(amount)))
+              cp.hincrby('confirming_payments',recipient,amount)
+            except Exception,e:
+              log_error('UpdateCoin: No identity found for payment id %s, tx hash %s, amount %s: %s' % (payment_id, tx_hash, amount, str(e)))
         payments=new_payments
         log_info('UpdateCoin: Got %d mature payments and %d confirming payments' % (len(payments),n_confirming))
         if len(payments) > 0:
@@ -132,6 +144,7 @@ def UpdateCoin(data):
             pipe.execute()
           except Exception,e:
             log_error('UpdateCoin: failed to set scan_block_height: %s' % str(e))
+      cp.execute()
     else:
       log_error('UpdateCoin: No results in get_bulk_payments reply')
   except Exception,e:

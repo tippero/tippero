@@ -446,7 +446,6 @@ RegisterCommand({
   'module': __name__,
   'name': 'book',
   'function': Book,
-  'admin': True,
   'registered': True,
   'help': "shows current book"
 })
@@ -482,7 +481,6 @@ RegisterCommand({
   'name': 'bet',
   'parms': '[<event name>] <outcome> <amount>',
   'function': Bet,
-  'admin': True,
   'registered': True,
   'help': "bet some %s on a particular outcome" % coinspecs.name
 })

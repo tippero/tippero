@@ -390,6 +390,8 @@ def Result(link,cmd):
       ounits = long(redis_hget(tname,bettor+":units"))
       if o == outcome:
         owinunits = long(total_units_bet * (1-config.bookie_fee) * ounits / total_units_bet_by_winners)
+        if owinunits<ounits:
+          owinunits=units
         resultmsg.append("%s wins %s" % (NickFromIdentity(bettor), AmountToString(owinunits)))
         p.hincrby("balances",bettor,owinunits)
       else:

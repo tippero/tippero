@@ -54,6 +54,9 @@ class IRCNetwork(Network):
       delay=cfg['delay']
       self.use_ssl=cfg['ssl']
       self.use_sasl=cfg['sasl']
+      self.welcome_line=cfg['welcome_line']
+      self.timeout_seconds=cfg['timeout_seconds']
+      self.channels=cfg['channels']
       if self.use_sasl:
         self.sasl_name=cfg['sasl_name']
     except Exception,e:
@@ -162,14 +165,14 @@ class IRCNetwork(Network):
     try:
       data=self._getline()
     except Exception,e:
-      log_warn('Exception from IRCNetwork:_getline, we were probably disconnected, reconnecting in %s seconds' % config.irc_timeout_seconds)
+      log_warn('Exception from IRCNetwork:_getline, we were probably disconnected, reconnecting in %s seconds' % self.timeout_seconds)
       time.sleep(5)
       self.last_ping_time = time.time()
       self._reconnect()
       return True
     if data == None:
-      if time.time() - self.last_ping_time > config.irc_timeout_seconds:
-        log_warn('%s seconds without PING, reconnecting in 5 seconds' % config.irc_timeout_seconds)
+      if time.time() - self.last_ping_time > self.timeout_seconds:
+        log_warn('%s seconds without PING, reconnecting in 5 seconds' % self.timeout_seconds)
         time.sleep(5)
         self.last_ping_time = time.time()
         self._reconnect()
@@ -181,12 +184,12 @@ class IRCNetwork(Network):
     # consider any IRC data as a ping
     self.last_ping_time = time.time()
 
-    if data.find ( config.irc_welcome_line ) != -1:
+    if data.find ( self.welcome_line ) != -1:
       self.userstable = dict()
       self.registered_users.clear()
       if not self.use_sasl:
         self.login()
-      for chan in config.irc_channels:
+      for chan in self.channels:
         self.join(chan)
         #ScanWho(None,[chan])
 

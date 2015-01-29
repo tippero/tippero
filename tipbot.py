@@ -407,5 +407,5 @@ while len(networks)>0:
 
 
 log_info('shutting down redis')
-redisdb.shutdown
+redisdb.shutdown()
 log_info('exiting')

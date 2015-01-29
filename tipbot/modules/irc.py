@@ -24,7 +24,7 @@ from tipbot.network import *
 from tipbot.command_manager import *
 
 irc_min_send_delay = 0.05 # seconds
-irc_max_send_delay = 1.1 # seconds
+irc_max_send_delay = 1.2 # seconds
 
 def GetNick(data):                            # Return Nickname
   nick = data.split('!')[0]

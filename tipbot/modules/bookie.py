@@ -326,7 +326,7 @@ def Bet(link,cmd):
       p.hincrby(tname,identity+":units",units)
       p.sadd(tname+":bettors",identity)
       p.execute()
-      total_bet=long(redis_hget(tname,"bets"))
+      total_bet=long(redis_hget(tname,identity+":units"))
       if total_bet == units:
         link.send("%s has bet %s on %s for %s" % (NickFromIdentity(identity), AmountToString(units), outcome, book_name))
       else:

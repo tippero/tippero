@@ -297,7 +297,7 @@ class IRCNetwork(Network):
           log_info('who_chan_users: %s' % str(who_chan_users))
           for who_chan_user in who_chan_users:
             if not who_chan_user in self.userstable[who_chan]:
-              if who_chan_user[0] == "@":
+              if who_chan_user[0] in ["@","+"]:
                 who_chan_user = who_chan_user[1:]
               self.userstable[who_chan][who_chan_user] = None
           log_log("New list of users in %s: %s" % (who_chan, str(self.userstable[who_chan].keys())))

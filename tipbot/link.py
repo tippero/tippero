@@ -17,7 +17,7 @@ class Link:
     self.user=user
     self.group=group
     self.data=data
-    self.identity_string = self.network.name+":"+self.user.nick
+    self.identity_string = self.network.name+":"+network.canonicalize(self.user.nick)
     self.batch_message = None
     self.batch_message_private = None
 

@@ -334,6 +334,20 @@ def OnCommandProxy(link,cmd):
     log_error('Exception running command %s: %s' % (str(cmd),str(e)))
   link.batch_send_done()
 
+def lower_nick(s,net):
+  news = ""
+  start_idx = s.find(net)
+  if start_idx >= 0:
+    start_idx += len(net)
+    news = s[:start_idx]
+    while start_idx < len(s) and s[start_idx] != ':':
+      news = news + s[start_idx].lower()
+      start_idx += 1
+    news = news + s[start_idx:]
+  else:
+    news = s
+  return news
+
 def MigrateRedis():
   balances=redis_hgetall('balances')
   for balance in balances:
@@ -373,6 +387,42 @@ def MigrateRedis():
       if not redisdb.exists(altkey):
         log_info('copying %s to %s' % (key,altkey))
         redisdb.restore(altkey,0,redisdb.dump(key))
+
+  keys=redisdb.keys()
+  for key in keys:
+    if key.find("freenode:") >= 0 and not key.endswith("freenode:"):
+      altkey=lower_nick(key,"freenode:")
+      if altkey == key:
+        continue
+      for ck in keys:
+        if key != ck and lower_nick(ck,"freenode:")==altkey:
+          log_error('Found two congruent keys: %s and %s' % (key,ck))
+          exit()
+      log_info('renaming %s to %s' % (key,altkey))
+      redisdb.restore(altkey,0,redisdb.dump(key))
+      redisdb.delete(key)
+  for hashname in ['balances','paymentid','bookie:1','password','dice:serverseed','dice:playerseed','blackjack:serverseed','blackjack:playerseed']:
+    entries=redis_hgetall(hashname)
+    for k in entries.keys():
+      v=entries[k]
+      if v.find("freenode:") >= 0 and not v.endswith("freenode:"):
+        altv=lower_nick(v,"freenode:")
+        if altv == v:
+          continue
+        log_info('changing %s:%s value %s to %s' % (hashname,k,v,altv))
+        redis_hset(hashname,k,altv)
+
+      if k.find("freenode:") >= 0 and not k.endswith("freenode:"):
+        altkey=lower_nick(k,"freenode:")
+        if altkey == k:
+          continue
+        for ck in keys:
+          if k != ck and lower_nick(ck,"freenode:")==altkey:
+            log_error('Found two congruent keys in %s: %s and %s' % (hashname,k,ck))
+            exit()
+        log_info('renaming %s key %s to %s' % (hashname,k,altkey))
+        redisdb.hset(hashname,altkey,redis_hget(hashname,k))
+        redisdb.hdel(hashname,k)
 
 RegisterCommands()
 redisdb = connect_to_redis(config.redis_host,config.redis_port)

@@ -87,6 +87,9 @@ class IRCNetwork(Network):
   def is_identified(self,link):
     return link.identity() in self.registered_users
 
+  def canonicalize(self,nick):
+    return nick.lower()
+
   def join(self,chan):
     self._irc_sendmsg('JOIN '+chan)
 

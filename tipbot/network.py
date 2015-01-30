@@ -51,6 +51,9 @@ class Network:
   def update_users_list(self,group_name=None):
     pass
 
+  def canonicalize(self,name):
+    return name
+
   def update(self):
     return True
 

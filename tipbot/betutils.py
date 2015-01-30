@@ -13,6 +13,7 @@ import random
 import hashlib
 import time
 import datetime
+from Crypto.Random.random import getrandbits
 import tipbot.coinspecs as coinspecs
 from tipbot.command_manager import *
 from utils import *
@@ -101,8 +102,8 @@ def GetServerSeed(link,game):
 def GenerateServerSeed(link,game):
   identity=link.identity()
   try:
-    salt="kfn3kjg4nkngvekjvn3u4vgb" + ":" + game
-    s=salt+":"+identity+":"+str(time.time())+":"+str(random.randint(0,1000000))
+    salt="kfn3kjg4nkngvekjvn3u4vgb:" + config.site_game_salt + ":" + game
+    s=salt+":"+identity+":"+str(time.time())+":"+str(getrandbits(128))
     seed=hashlib.sha256(s).hexdigest()
     SetServerSeed(link,game,seed)
   except Exception,e:

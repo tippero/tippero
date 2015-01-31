@@ -236,13 +236,14 @@ def RetrieveBalance(link):
 
 def IdentityFromString(link,s):
   if s.find(':') == -1:
-    network = link.network.name
+    network = link.network
     nick=s
   else:
     parts=s.split(':')
-    network=parts[0]
+    network_name=parts[0]
+    network=GetNetworkByName(network_name)
     nick=parts[1]
-  return network+':'+nick
+  return network.name+':'+network.canonicalize(nick)
 
 def NickFromIdentity(identity):
   return identity.split(':')[1]

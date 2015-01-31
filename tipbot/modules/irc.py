@@ -31,7 +31,7 @@ def GetNick(data):                            # Return Nickname
   nick = nick.replace(':', ' ')
   nick = nick.replace(' ', '')
   nick = nick.strip(' \t\n\r')
-  return nick
+  return nick.lower()
 
 class IRCNetwork(Network):
   def __init__(self,name):
@@ -354,7 +354,7 @@ class IRCNetwork(Network):
             log_log("New list of users in %s: %s" % (chan, str(self.userstable[chan].keys())))
 
       elif action == 'KICK':
-        nick = parts[3]
+        nick = parts[3].lower()
         log_info('%s was kicked' % nick)
         removed_list = ""
         for chan in self.userstable:

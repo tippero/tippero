@@ -225,29 +225,38 @@ def Book(link,cmd):
       log_error('Book: Failed to retrieve book %d: %s' % (book_index, str(e)))
       link.send('An error occured')
       return
-    link.send('Book #%d is for %s, with outcomes %s' % (book_index, name, ", ".join(outcomes)))
-    msg = []
     outcomes = redis_smembers(tname+':outcomes')
+    outcomes_with_bets = []
     for o in outcomes:
       ou = long(redis_hget(tname+":bets",o) or 0)
       if ou > 0:
-        msg.append('%s are on %s' % (AmountToString(ou),o))
-    if not msg:
-      msg = ["There are no bets placed for %s yet" % name]
-    link.send('%s' % ", ".join(msg))
+        outcomes_with_bets.append(o+" (%s)" % AmountToString(ou))
+      else:
+        outcomes_with_bets.append(o)
+    msg = 'Book #%d (%s): %s' % (book_index, name, ", ".join(outcomes_with_bets))
     if redis_hget(tname,'closed'):
-      link.send('This book is closed to new bets')
+      msg = msg + " - closed"
     elif redis_hexists(tname,'closing_time'):
       try:
         closing_time=float(redis_hget(tname,'closing_time'))
-        link.send('This book closes to new bets in %s' % (TimeToString(closing_time-time.time())))
+        msg = msg + ' - closing in %s' % (TimeToString(closing_time-time.time()))
       except Exception,e:
         log_error('Failed to get closing time: %s' % (str(e)))
+    link.send(msg)
+
+  for book_index in active_books.keys():
+    book_index = long(book_index)
+    tname='bookie:%s' % book_index
+    try:
+      name = redis_hget(tname,'name')
+      outcome = redis_hget(tname,identity+":outcome")
+      units = redis_hget(tname,identity+":units")
+    except Exception,e:
+      log_error('Book: Failed to retrieve book %d: %s' % (book_index, str(e)))
+      link.send('An error occured')
+      return
     if outcome:
-      link.send('%s has %s on %s' % (NickFromIdentity(identity), AmountToString(units), outcome))
-    else:
-      if not redis_hget(tname,'closed'):
-        link.send('%s did not bet on this book yet' % NickFromIdentity(identity))
+      link.send('%s has %s on %s in book #%d (%s)' % (NickFromIdentity(identity), AmountToString(units), outcome, book_index, name))
 
 def Bet(link,cmd):
   identity=link.identity()

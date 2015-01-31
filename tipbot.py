@@ -148,9 +148,10 @@ def AddBalance(link,cmd):
     aidentity=Link(network,User(network,anick)).identity()
   else:
     aidentity=anick
+  account = GetAccount(aidentity)
   log_info("AddBalance: Adding %s to %s's balance" % (AmountToString(units),aidentity))
   try:
-    balance = redis_hincrby("balances",aidentity,units)
+    balance = redis_hincrby("balances",account,units)
   except Exception, e:
     log_error('AddBalance: exception: %s' % str(e))
     link.send( "An error has occured")
@@ -349,12 +350,6 @@ def lower_nick(s,net):
   return news
 
 def MigrateRedis():
-  balances=redis_hgetall('balances')
-  for balance in balances:
-    if balance.find(':') == -1:
-      redis_hset('balances','freenode:'+balance,balances[balance])
-      redis_hdel('balances',balance)
-
   keys=redisdb.keys('*')
   for key in keys:
     if key.startswith('dice:stats:') and key.find('freenode:') == -1:
@@ -423,6 +418,16 @@ def MigrateRedis():
         log_info('renaming %s key %s to %s' % (hashname,k,altkey))
         redisdb.hset(hashname,altkey,redis_hget(hashname,k))
         redisdb.hdel(hashname,k)
+
+  if not redis_exists('accounts'):
+    idx=0
+    balances = redis_hgetall('balances')
+    for key in balances:
+      redis_hset('balances',idx,balances[key])
+      redis_hset('accounts',key,idx)
+      redis_hdel('balances',key)
+      idx += 1
+    redis_set('next_account_id',idx)
 
 RegisterCommands()
 redisdb = connect_to_redis(config.redis_host,config.redis_port)

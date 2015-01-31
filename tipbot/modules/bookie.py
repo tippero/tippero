@@ -120,7 +120,8 @@ def Cancel(link,cmd):
     for bettor in bettors:
       units = long(redis_hget(tname,bettor+":units"))
       log_info('Refunding %s to %s' % (AmountToString(units),bettor))
-      p.hincrby('balances',bettor,units)
+      a = GetAccount(bettor)
+      p.hincrby('balances',a,units)
       p.hincrby('earmarked','bookie',-units)
       refundmsg.append('%s to %s' % (AmountToString(units), NickFromIdentity(bettor)))
     p.hdel('bookie:active',book_index)
@@ -300,9 +301,10 @@ def Bet(link,cmd):
   log_info('%s wants to bet %s on %s' % (identity, AmountToString(units), outcome))
   try:
     log_info('Bet: %s betting %s on outcome %s' % (identity, AmountToString(units), outcome))
+    account = GetAccount(link)
     try:
       p = redis_pipeline()
-      p.hincrby("balances",identity,-units)
+      p.hincrby("balances",account,-units)
       p.hincrby("earmarked","bookie",units)
       p.hincrby(tname+":bets",outcome,units)
       p.hincrby(tname,"bets",units)
@@ -359,11 +361,12 @@ def Result(link,cmd):
       o = redis_hget(tname,bettor+":outcome")
       ounits = long(redis_hget(tname,bettor+":units"))
       if o == outcome:
+        a = GetAccount(bettor)
         owinunits = long(total_units_bet * (1-config.bookie_fee) * ounits / total_units_bet_by_winners)
         if owinunits<ounits:
           owinunits=units
         resultmsg.append("%s wins %s" % (NickFromIdentity(bettor), AmountToString(owinunits)))
-        p.hincrby("balances",bettor,owinunits)
+        p.hincrby("balances",a,owinunits)
       else:
         resultmsg.append("%s loses %s" % (NickFromIdentity(bettor), AmountToString(ounits)))
     p.hdel('bookie:active',book_index)

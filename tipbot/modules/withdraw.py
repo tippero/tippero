@@ -77,8 +77,9 @@ def Withdraw(link,cmd):
     link.send("Sorry, withdrawal is disabled due to a wallet error which requires admin assistance")
     return
 
+  account = GetAccount(identity)
   try:
-    balance = redis_hget("balances",identity)
+    balance = redis_hget('accounts',account)
     if balance == None:
       balance = 0
     balance=long(balance)
@@ -133,7 +134,7 @@ def Withdraw(link,cmd):
   link.send( "Tx sent: %s" % tx_hash)
 
   try:
-    redis_hincrby("balances",identity,-amount)
+    redis_hincrby("balances",account,-amount)
   except Exception, e:
     log_error('Withdraw: FAILED TO SUBTRACT BALANCE: exception: %s' % str(e))
     CheckDisableWithdraw()

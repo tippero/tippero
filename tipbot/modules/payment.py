@@ -111,8 +111,11 @@ def UpdateCoin(data):
               recipient = GetIdentityFromPaymentID(payment_id)
               if not recipient:
                 raise RuntimeError('Payment ID %s not found' % payment_id)
+              account = redis_hget('accounts',recipient)
+              if accounts == None:
+                raise RuntimeError('No account found for %s' % recipient)
               log_info('UpdateCoin: Found payment %s to %s for %s' % (tx_hash,recipient, AmountToString(amount)))
-              cp.hincrby('confirming_payments',recipient,amount)
+              cp.hincrby('confirming_payments',account,amount)
             except Exception,e:
               log_error('UpdateCoin: No identity found for payment id %s, tx hash %s, amount %s: %s' % (payment_id, tx_hash, amount, str(e)))
         payments=new_payments
@@ -135,8 +138,10 @@ def UpdateCoin(data):
                 recipient = GetIdentityFromPaymentID(payment_id)
                 if not recipient:
                   raise RuntimeError('Payment ID %s not found' % payment_id)
+                if accounts == None:
+                  raise RuntimeError('No account found for %s' % recipient)
                 log_info('UpdateCoin: Found payment %s to %s for %s' % (tx_hash,recipient, AmountToString(amount)))
-                pipe.hincrby("balances",recipient,amount)
+                pipe.hincrby("balances",account,amount)
                 pipe.sadd("processed_txs",tx_hash)
               except Exception,e:
                 log_error('UpdateCoin: No identity found for payment id %s, tx hash %s, amount %s: %s' % (payment_id, tx_hash, amount, str(e)))

@@ -31,7 +31,9 @@ pending_confirmations=dict()
 def PerformTip(link,whoid,units):
   identity=link.identity()
   try:
-    balance = redis_hget("balances",identity)
+    account = GetAccount(identity)
+    who_account = GetAccount(whoid)
+    balance = redis_hget("balances",account)
     if balance == None:
       balance = 0
     balance=long(balance)
@@ -45,8 +47,8 @@ def PerformTip(link,whoid,units):
       p.incrby("tips_total_amount",units);
       p.hincrby("tips_count",identity,1);
       p.hincrby("tips_amount",identity,units);
-      p.hincrby("balances",identity,-units);
-      p.hincrby("balances",whoid,units)
+      p.hincrby("balances",account,-units);
+      p.hincrby("balances",who_account,units)
       p.execute()
       link.send("%s has tipped %s %s" % (NickFromIdentity(identity), NickFromIdentity(whoid), AmountToString(units)))
     except Exception, e:
@@ -123,7 +125,8 @@ def Rain(link,cmd):
   units = long(amount * coinspecs.atomic_units)
 
   try:
-    balance = redis_hget("balances",identity)
+    account = GetAccount(identity)
+    balance = redis_hget("balances",account)
     if balance == None:
       balance = 0
     balance=long(balance)
@@ -131,11 +134,14 @@ def Rain(link,cmd):
       link.send("You only have %s" % (AmountToString(balance)))
       return
 
-    userlist=[user.identity() for user in link.network.get_users(group.name)]
-    log_log("users in %s: %s" % (group.name,str(userlist)))
-    userlist.remove(identity)
+    userlist=link.network.get_users(group.name)
+    log_log("users in %s: %s" % (group.name,str([user.identity() for user in userlist])))
+    userlist.remove(link)
     for n in config.no_rain_to_nicks:
-      userlist.remove(IdentityFromString(link,n))
+      i=IdentityFromString(link,n)
+      l=Link(link.network,User(link.network,NickFromIdentity(i)),group)
+      if l in userlist:
+        userlist.remove(l)
     if users == None or users > len(userlist):
       users = len(userlist)
       everyone = True
@@ -148,10 +154,10 @@ def Rain(link,cmd):
       link.send("This would mean not even an atomic unit per nick")
       return
     log_info("%s wants to rain %s on %s users in %s" % (identity, AmountToString(units), users, group.name))
-    log_log("eligible users in %s: %s" % (group.name, str(userlist)))
+    log_log("eligible users in %s: %s" % (group.name, str([user.identity() for user in userlist])))
     random.shuffle(userlist)
     userlist = userlist[0:users]
-    log_log("selected users in %s: %s" % (group.name, userlist))
+    log_log("selected users in %s: %s" % (group.name, [user.identity() for user in userlist]))
     user_units = long(units / users)
 
     enumerate_users = False
@@ -163,13 +169,14 @@ def Rain(link,cmd):
       msg = "%s rained %s on:" % (link.user.nick, AmountToString(user_units))
       enumerate_users = True
     pipe = redis_pipeline()
-    pipe.hincrby("balances",identity,-units)
+    pipe.hincrby("balances",account,-units)
     pipe.incrby("rain_total_count",1)
     pipe.incrby("rain_total_amount",units)
     pipe.hincrby("rain_count",identity,1)
     pipe.hincrby("rain_amount",identity,units)
     for user in userlist:
-      pipe.hincrby("balances",user,user_units)
+      a = GetAccount(user)
+      pipe.hincrby("balances",a,user_units)
       if enumerate_users:
         msg = msg + " " + NickFromIdentity(user)
     pipe.execute()
@@ -223,7 +230,8 @@ def RainActive(link,cmd):
   units = long(amount * coinspecs.atomic_units)
 
   try:
-    balance = redis_hget("balances",identity)
+    account = GetAccount(link)
+    balance = redis_hget("balances",account)
     if balance == None:
       balance = 0
     balance=long(balance)
@@ -232,17 +240,20 @@ def RainActive(link,cmd):
       return
 
     now = time.time()
-    userlist = [user.identity() for user in link.network.get_active_users(seconds,group.name)]
-    log_log('userlist: %s' % str(userlist))
-    userlist.remove(link.identity())
+    userlist = link.network.get_active_users(seconds,group.name)
+    log_log('userlist: %s' % str([user.identity() for user in userlist]))
+    userlist.remove(link)
     for n in config.no_rain_to_nicks:
-      userlist.remove(IdentityFromString(link,n))
+      i=IdentityFromString(link,n)
+      l=Link(link.network,User(link.network,NickFromIdentity(i)),group)
+      if l in userlist:
+        userlist.remove(l)
     weights=dict()
     weight=0
-    log_log('userlist to loop: %s' % str(userlist))
+    log_log('userlist to loop: %s' % str([user.identity() for user in userlist]))
     for n in userlist:
-      log_log('user to check: %s' % NickFromIdentity(n))
-      t = link.network.get_last_active_time(NickFromIdentity(n),group.name)
+      log_log('user to check: %s' % n.user.nick)
+      t = link.network.get_last_active_time(n.user.nick,group.name)
       if t == None:
         continue
       dt = now - t
@@ -256,7 +267,7 @@ def RainActive(link,cmd):
       return
 
     pipe = redis_pipeline()
-    pipe.hincrby("balances",identity,-units)
+    pipe.hincrby("balances",account,-units)
     pipe.incrby("arain_total_count",1);
     pipe.incrby("arain_total_amount",units);
     pipe.hincrby("arain_count",identity,1);
@@ -269,9 +280,10 @@ def RainActive(link,cmd):
       user_units = long(units * weights[n] / weight)
       if user_units <= 0:
         continue
-      act = now - link.network.get_last_active_time(NickFromIdentity(n),link.group.name)
-      log_info("%s rained %s on %s (last active %f hours ago)" % (identity, AmountToString(user_units),n,act/3600))
-      pipe.hincrby("balances",n,user_units)
+      act = now - link.network.get_last_active_time(n.user.nick,link.group.name)
+      log_info("%s rained %s on %s (last active %f hours ago)" % (identity, AmountToString(user_units),n.identity(),act/3600))
+      a=GetAccount(n)
+      pipe.hincrby("balances",a,user_units)
       rained_units += user_units
       if not minu or user_units < minu:
         minu = user_units

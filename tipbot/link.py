@@ -24,6 +24,12 @@ class Link:
   def __repr__(self):
     return '<link: network %s, user %s, group %s, data %s>' % (str(self.network),str(self.user),str(self.group),str(self.data))
 
+  def __eq__(self,link):
+    return self.identity()==link.identity()
+
+  def __ne__(self,link):
+    return not self.__eq__(link)
+
   def identity(self):
     return self.identity_string
 

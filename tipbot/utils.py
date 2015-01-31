@@ -19,6 +19,7 @@ from decimal import *
 import tipbot.config as config
 import tipbot.coinspecs as coinspecs
 from tipbot.log import log_error, log_warn, log_info, log_log
+from tipbot.link import Link
 from tipbot.redisdb import *
 
 registered_networks=dict()
@@ -284,10 +285,28 @@ def RetrieveTipbotBalance(force_refresh=False):
   cached_tipbot_unlocked_balance=unlocked_balance
   return balance, unlocked_balance
 
+def GetAccount(link_or_identity):
+  if isinstance(link_or_identity,Link):
+    identity=link_or_identity.identity()
+  else:
+    identity=link_or_identity
+  account = redis_hget('accounts',identity)
+  if account == None:
+    log_info('No account found for %s, creating new one' % identity)
+    next_account_id = long(redis_get('next_account_id') or 0)
+    account = next_account_id
+    if redis_hexists('accounts',account):
+      raise RuntimeError('Next account ID already exists (%d)', account)
+    redis_hset('accounts',identity,account)
+    next_account_id += 1
+    redis_set('next_account_id',next_account_id)
+  return account
+
 def RetrieveBalance(link):
   try:
-    balance = redis_hget("balances",link.identity()) or 0
-    confirming = redis_hget("confirming_payments",link.identity()) or 0
+    account = GetAccount(link)
+    balance = redis_hget("balances",account) or 0
+    confirming = redis_hget("confirming_payments",account) or 0
     return long(balance), long(confirming)
   except Exception, e:
     log_error('RetrieveBalance: exception: %s' % str(e))

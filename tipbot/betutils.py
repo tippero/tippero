@@ -69,12 +69,13 @@ def IsBetValid(link,amount,minbet,maxbet,potential_loss,max_loss,max_loss_ratio)
 
 def IsPlayerBalanceAtLeast(link,units):
   try:
-    balance = redis_hget("balances",link.identity())
+    account = GetAccount(link)
+    balance = redis_hget("balances",account)
     if balance == None:
       balance = 0
     balance=long(balance)
     if units > balance:
-      log_info ('%s does not have enough balance' % link.user.nick)
+      log_info ('%s does not have enough balance' % link.identity())
       return False, "You only have %s" % (AmountToString(balance))
   except Exception,e:
     log_error ('failed to query balance')
@@ -139,6 +140,7 @@ def GetServerSeedHash(link,game):
 
 def RecordGameResult(link,game,win,lose,units):
   identity=link.identity()
+  account=GetAccount(identity)
   try:
     ts=datetime.datetime.utcnow()
     tsh="%u" % (ts.hour)
@@ -169,7 +171,7 @@ def RecordGameResult(link,game,win,lose,units):
     p.zincrby(nzhtname+"wagered",tsh,units)
     p.zincrby(nzdtname+"wagered",tsd,units)
     if win:
-      p.hincrby("balances",identity,units)
+      p.hincrby("balances",account,units)
       p.hincrby(tname,"won",units)
       p.hincrby(rtname,"won",units)
       p.hincrby(alltname,"won",units)
@@ -187,7 +189,7 @@ def RecordGameResult(link,game,win,lose,units):
       p.zincrby(nzhtname+"nwon",tsh,1)
       p.zincrby(nzdtname+"nwon",tsd,1)
     if lose:
-      p.hincrby("balances",identity,-units)
+      p.hincrby("balances",account,-units)
       p.hincrby(tname,"lost",units)
       p.hincrby(rtname,"lost",units)
       p.hincrby(alltname,"lost",units)
@@ -269,11 +271,11 @@ def RetrieveHouseBalance(force_refresh=False):
   house_balance = unlocked_balance
 
   user_balances=0
-  identities = redis_hgetall("balances")
-  for identity in identities:
-    ib = long(identities[identity])
-    house_balance = house_balance - ib
-    user_balances+=ib
+  accounts = redis_hgetall("balances")
+  for account in accounts:
+    ab = long(accounts[account])
+    house_balance = house_balance - ab
+    user_balances+=ab
 
   earmarked_balances=0
   earmarked = redis_hgetall("earmarked")
@@ -296,9 +298,13 @@ def GetHouseBalance(link,cmd):
   try:
     balance = RetrieveHouseBalance()
     personal_balance=0
+    seen_accounts=[]
     for network in networks:
       identity=network.name+':'+config.tipbot_name
-      personal_balance += long(redis_hget('balances',identity) or 0)
+      account=redis_hget('accounts',identity)
+      if not account in seen_accounts:
+        personal_balance += long(redis_hget('balances',account) or 0)
+        seen_accounts.append(account)
   except Exception,e:
     log_error('Failed to retrieve house balance: %s' % str(e))
     link.send('An error occured')

@@ -35,7 +35,8 @@ no_rain_to_nicks = []
 
 # commands used by other bots, to avoid "unknown command" complaints
 silent_invalid_commands = {
-  'freenode': ['price','worth','net','pools','calc']
+  'freenode': [
+    'price','worth','net','pools','calc','convert','val']
 }
 
 network_config = {

@@ -210,7 +210,6 @@ def RecordGameResult(link,game,win,lose,units):
     raise
 
 def ShowGameStats(link,sidentity,title,game):
-  identity=IdentityFromString(link,sidentity)
   tname="%s:stats:"%game+sidentity
   try:
     bets=redis_hget(tname,"bets")

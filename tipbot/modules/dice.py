@@ -39,7 +39,7 @@ def Roll(link):
   try:
     s = GetServerSeed(link,'dice') + ":" + GetPlayerSeed(link,'dice') + ":" + str(rolls)
     sh = hashlib.sha256(s).hexdigest()
-    roll = float(long(sh[0:8],base=16))/0x100000000
+    roll = float(long(sh[0:8],base=16))/0xffffffff
     return rolls, roll
   except Exception,e:
     log_error('Failed to roll for %s: %s' % (identity,str(e)))
@@ -203,7 +203,7 @@ def Fair(link,cmd):
   link.send_private("for future rolls. Then follow these steps:")
   link.send_private("Calculate the SHA-256 sum of serverseed:playerseed:rollnumber")
   link.send_private("Take the first 8 characters of this sum to make an hexadecimal")
-  link.send_private("number, and divide it by 0x100000000. You will end up with a number")
+  link.send_private("number, and divide it by 0xffffffff. You will end up with a number")
   link.send_private("between 0 and 1 which was your roll for that particular bet")
   link.send_private("See !faircode for Python code implementing this check")
 
@@ -215,7 +215,7 @@ def FairCode(link,cmd):
   link.send_private("import sys,hashlib,random")
   link.send_private("try:")
   link.send_private("  s=hashlib.sha256(sys.argv[1]+':'+sys.argv[2]+':'+sys.argv[3]).hexdigest()")
-  link.send_private("  roll = float(long(s[0:8],base=16))/0x100000000")
+  link.send_private("  roll = float(long(s[0:8],base=16))/0xffffffff")
   link.send_private("  print '%.16g' % roll")
   link.send_private("except:")
   link.send_private("  print 'need serverseed, playerseed, and roll number'")

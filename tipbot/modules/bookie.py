@@ -52,11 +52,6 @@ def Bookie(link,cmd):
     link.send('usage: !bookie <name> <outcome1> <outcome2> [<outcome3>...]')
     return
 
-  active_books = GetActiveBooks()
-  if active_books and name in active_books.values():
-    link.send('A book is already active with that name')
-    return
-
   book_index=long(redis_get('bookie:last_book') or 0)
   book_index += 1
   tname = "bookie:%d" % book_index
@@ -83,10 +78,18 @@ def GetBookIndex(cmd,base_arg_count):
 
   if GetParam(cmd,base_arg_count+1):
     name = GetParam(cmd,1)
-    if not name in active_books.values():
-      return None, 'Book %s not found' % name
-    book_index = long(active_books.keys()[active_books.values().index(name)])
-    parm_offset = 1
+    if name[0] == '#':
+      if not name[1:] in active_books.keys():
+        return None, 'Book %s not found' % name
+      book_index = long(active_books.keys()[active_books.keys().index(name[1:])])
+      parm_offset = 1
+    else:
+      if not name in active_books.values():
+        return None, 'Book %s not found' % name
+      if active_books.values().count(name) > 1:
+        return None, 'There are several books named %s, use its #N id instead' % name
+      book_index = long(active_books.keys()[active_books.values().index(name)])
+      parm_offset = 1
   else:
     if len(active_books) > 1:
       return None, 'There are several open books: %s' % ", ".join(active_books.values())
@@ -199,7 +202,7 @@ def Book(link,cmd):
     link.send('The book is empty')
     return
 
-  for book_index in active_books.keys():
+  for book_index in sorted(active_books.keys()):
     book_index = long(book_index)
     tname='bookie:%s' % book_index
     try:
@@ -405,7 +408,7 @@ RegisterCommand({
 RegisterCommand({
   'module': __name__,
   'name': 'cancel',
-  'parms': '[<event name>]',
+  'parms': '[<event name> | #<id>]',
   'function': Cancel,
   'admin': True,
   'registered': True,
@@ -421,7 +424,7 @@ RegisterCommand({
 RegisterCommand({
   'module': __name__,
   'name': 'close',
-  'parms': '[<event name>]',
+  'parms': '[<event name> | #<id>]',
   'function': Close,
   'admin': True,
   'registered': True,
@@ -430,7 +433,7 @@ RegisterCommand({
 RegisterCommand({
   'module': __name__,
   'name': 'schedule_close',
-  'parms': '[<event name>] <minutes>',
+  'parms': '[<event name> | #<id>] <minutes>',
   'function': ScheduleClose,
   'admin': True,
   'registered': True,
@@ -439,7 +442,7 @@ RegisterCommand({
 RegisterCommand({
   'module': __name__,
   'name': 'result',
-  'parms': '[<event name>] <outcome>',
+  'parms': '[<event name> | #<id>] <outcome>',
   'function': Result,
   'admin': True,
   'registered': True,
@@ -448,7 +451,7 @@ RegisterCommand({
 RegisterCommand({
   'module': __name__,
   'name': 'bet',
-  'parms': '[<event name>] <outcome> <amount>',
+  'parms': '[<event name> | #<id>] <outcome> <amount>',
   'function': Bet,
   'registered': True,
   'help': "bet some %s on a particular outcome" % coinspecs.name

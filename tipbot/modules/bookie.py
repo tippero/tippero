@@ -76,27 +76,35 @@ def Bookie(link,cmd):
     return
   link.send('%s opens book #%d for %s, with outcomes: %s' % (link.user.nick, book_index, name, ", ".join(outcomes)))
 
+def GetBookIndex(cmd,base_arg_count):
+  active_books=GetActiveBooks()
+  if len(active_books) == 0:
+    return None, 'There is no open book'
+
+  if GetParam(cmd,base_arg_count+1):
+    name = GetParam(cmd,1)
+    if not name in active_books.values():
+      return None, 'Book %s not found' % name
+    book_index = long(active_books.keys()[active_books.values().index(name)])
+    parm_offset = 1
+  else:
+    if len(active_books) > 1:
+      return None, 'There are several open books: %s' % ", ".join(active_books.values())
+    book_index = long(active_books.keys()[0])
+    parm_offset = 0
+  return long(book_index), parm_offset
+
 def Cancel(link,cmd):
   identity=link.identity()
 
   SweepClosingTimes()
 
-  active_books=GetActiveBooks()
-  if len(active_books) == 0:
-    link.send('There is no open book to cancel')
+  res0, res1 = GetBookIndex(cmd,0)
+  if res0 == None:
+    link.send(res1)
     return
-
-  name = GetParam(cmd,1)
-  if name:
-    if not name in active_books.values():
-      link.send('Book not found')
-      return
-    book_index = long(active_books.keys()[active_books.values().index(name)])
-  else:
-    if len(active_books) > 1:
-      link.send('There are several open books, specify the one to cancel: %s' % ", ".join(active_books.values()))
-      return
-    book_index = long(active_books.keys()[0])
+  book_index = res0
+  parm_offset = res1
 
   tname='bookie:%d' % book_index
   book_name=redis_hget(tname,'name')
@@ -128,22 +136,12 @@ def Close(link,cmd):
 
   SweepClosingTimes()
 
-  active_books=GetActiveBooks()
-  if len(active_books) == 0:
-    link.send('There is no open book to close')
+  res0, res1 = GetBookIndex(cmd,0)
+  if res0 == None:
+    link.send(res1)
     return
-
-  name = GetParam(cmd,1)
-  if name:
-    if not name in active_books.values():
-      link.send('Book not found')
-      return
-    book_index = long(active_books.keys()[active_books.values().index(name)])
-  else:
-    if len(active_books) > 1:
-      link.send('There are several open books, specify the one to close: %s' % ", ".join(active_books.values()))
-      return
-    book_index = long(active_books.keys()[0])
+  book_index = res0
+  parm_offset = res1
 
   tname = "bookie:%d" % book_index
   book_name=redis_hget(tname,'name')
@@ -162,24 +160,12 @@ def ScheduleClose(link,cmd):
 
   SweepClosingTimes()
 
-  active_books=GetActiveBooks()
-  if len(active_books) == 0:
-    link.send('There is no open book to close')
+  res0, res1 = GetBookIndex(cmd,0)
+  if res0 == None:
+    link.send(res1)
     return
-
-  if GetParam(cmd,2):
-    name = GetParam(cmd,1)
-    if not name in active_books.values():
-      link.send('Book not found')
-      return
-    book_index = long(active_books.keys()[active_books.values().index(name)])
-    parm_offset = 1
-  else:
-    if len(active_books) > 1:
-      link.send('There are several open books, specify the one to close: %s' % ", ".join(active_books.values()))
-      return
-    book_index = long(active_books.keys()[0])
-    parm_offset = 0
+  book_index = res0
+  parm_offset = res1
 
   tname = "bookie:%d" % book_index
   book_name=redis_hget(tname,'name')
@@ -263,26 +249,12 @@ def Bet(link,cmd):
 
   SweepClosingTimes()
 
-  active_books=GetActiveBooks()
-  if len(active_books) == 0:
-    link.send('The book is empty')
+  res0, res1 = GetBookIndex(cmd,2)
+  if res0 == None:
+    link.send(res1)
     return
-
-  if GetParam(cmd,3):
-    # name outcome amount
-    name = GetParam(cmd,1)
-    if not name in active_books.values():
-      link.send('Book not found')
-      return
-    book_index = long(active_books.keys()[active_books.values().index(name)])
-    parm_offset = 1
-  else:
-    # outcome amount
-    if len(active_books) > 1:
-      link.send('There are several open books, specify the one to bet on: %s' % ", ".join(active_books.values()))
-      return
-    book_index = long(active_books.keys()[0])
-    parm_offset = 0
+  book_index = res0
+  parm_offset = res1
 
   tname = "bookie:%d" % book_index
   book_name=redis_hget(tname,'name')
@@ -353,26 +325,12 @@ def Result(link,cmd):
 
   SweepClosingTimes()
 
-  active_books=GetActiveBooks()
-  if len(active_books) == 0:
-    link.send('The book is empty')
+  res0, res1 = GetBookIndex(cmd,1)
+  if res0 == None:
+    link.send(res1)
     return
-
-  if GetParam(cmd,2):
-    # name outcome
-    name = GetParam(cmd,1)
-    if not name in active_books.values():
-      link.send('Book not found')
-      return
-    book_index = long(active_books.keys()[active_books.values().index(name)])
-    parm_offset = 1
-  else:
-    # outcome
-    if len(active_books) > 1:
-      link.send('There are several open books, specify the one to call result for: %s' % ", ".join(active_books.values()))
-      return
-    book_index = long(active_books.keys()[0])
-    parm_offset = 0
+  book_index = res0
+  parm_offset = res1
 
   tname = "bookie:%d" % book_index
   book_name=redis_hget(tname,'name')

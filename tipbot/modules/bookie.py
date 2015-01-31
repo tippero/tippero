@@ -289,7 +289,7 @@ def Bet(link,cmd):
 
   outcomes = redis_smembers(tname+':outcomes')
   if not outcome in outcomes:
-    link.send("%s is not a valid outcome, try one of: %s" % (outcome, ", ".join(outcomes)))
+    link.send("%s is not a valid outcome for %s, try one of: %s" % (outcome, book_name, ", ".join(outcomes)))
     return
   if redis_hexists(tname,identity+":outcome"):
     previous_outcome = redis_hget(tname,identity+":outcome")

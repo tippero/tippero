@@ -388,7 +388,7 @@ def Help(link):
   link.send_private("(minus bookie fee) pro rata to their original bet amount")
   link.send_private("Once placed, a bet may not be cancelled (unless the book itself")
   link.send_private("is cancelled, in which case every bettor gets a full refund)")
-  link.send_private("Minimum bet %s, maximum bet %s" % (config.bookie_min_bet, config.bookie_max_bet ))
+  link.send_private("Minimum bet %s, maximum bet %s" % (config.bookie_min_bet, config.bookie_max_bet))
 
 
 

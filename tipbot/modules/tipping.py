@@ -248,7 +248,7 @@ def RainActive(link,cmd):
       l=Link(link.network,User(link.network,NickFromIdentity(i)),group)
       if l in userlist:
         userlist.remove(l)
-    weights=dict()
+    weights=[]
     weight=0
     log_log('userlist to loop: %s' % str([user.identity() for user in userlist]))
     for n in userlist:
@@ -259,7 +259,7 @@ def RainActive(link,cmd):
       dt = now - t
       if dt <= seconds:
         w = (1 * (seconds - dt) + minfrac * dt) / (seconds)
-        weights[n] = w
+        weights.append((n, w))
         weight += w
 
     if len(weights) == 0:
@@ -276,8 +276,8 @@ def RainActive(link,cmd):
     nnicks = 0
     minu=None
     maxu=None
-    for n in weights:
-      user_units = long(units * weights[n] / weight)
+    for n,w in weights:
+      user_units = long(units * w / weight)
       if user_units <= 0:
         continue
       act = now - link.network.get_last_active_time(n.user.nick,link.group.name)

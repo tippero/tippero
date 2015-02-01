@@ -108,7 +108,7 @@ def Withdraw(link,cmd):
     params = {
       'destinations': [{'address': address, 'amount': topay}],
       'payment_id': GetPaymentID(link),
-      'fee': fee,
+      'fee': coinspecs.min_withdrawal_fee,
       'mixin': config.withdrawal_mixin,
       'unlock_time': 0,
     }

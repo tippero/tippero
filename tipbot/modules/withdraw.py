@@ -36,7 +36,7 @@ def EnableWithdraw(link,cmd):
 
 def CheckDisableWithdraw():
   if config.disable_withdraw_on_error:
-    DisableWithdraw(None,None,None)
+    DisableWithdraw(None,None)
 
 def Withdraw(link,cmd):
   identity=link.identity()

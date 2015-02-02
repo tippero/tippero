@@ -52,13 +52,24 @@ def Withdraw(link,cmd):
   try:
     address=cmd[1]
   except Exception,e:
-    link.send("Usage: withdraw address [amount]")
+    link.send("Usage: withdraw address [amount] [paymentid]")
     return
 
   if not IsValidAddress(address):
     link.send("Invalid address")
     return
-  amount = GetParam(cmd,2)
+
+  if GetParam(cmd,3):
+    amount = GetParam(cmd,2)
+    paymentid = GetParam(cmd,3)
+  else:
+    if IsValidPaymentID(GetParam(cmd,2)):
+      amount = None
+      paymentid = GetParam(cmd,2)
+    else:
+      amount = GetParam(cmd,2)
+      paymentid = None
+
   if amount:
     try:
       amount = StringToUnits(amount)
@@ -67,6 +78,10 @@ def Withdraw(link,cmd):
       amount += local_withdraw_fee
     except Exception,e:
       link.send("Invalid amount")
+      return
+  if paymentid != None:
+    if not IsValidPaymentID(paymentid):
+      link.send("Invalid payment ID")
       return
 
   log_info("Withdraw: %s wants to withdraw %s to %s" % (identity, AmountToString(amount) if amount else "all", address))
@@ -106,7 +121,7 @@ def Withdraw(link,cmd):
     log_info('Withdraw: fee: %s, to pay: %s' % (AmountToString(fee), AmountToString(topay)))
     params = {
       'destinations': [{'address': address, 'amount': topay}],
-      'payment_id': GetPaymentID(link),
+      'payment_id': paymentid,
       'fee': coinspecs.min_withdrawal_fee,
       'mixin': config.withdrawal_mixin,
       'unlock_time': 0,
@@ -153,7 +168,7 @@ RegisterModule({
 RegisterCommand({
   'module': __name__,
   'name': 'withdraw',
-  'parms': '<address> [<amount>]',
+  'parms': '<address> [<amount>] [paymentid]',
   'function': Withdraw,
   'registered': True,
   'help': "withdraw part or all of your balance"

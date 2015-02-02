@@ -260,6 +260,45 @@ def SendToLink(link,msg):
 def IsRegistered(link,cmd):
   RunRegisteredCommand(link,SendToLink,"You are registered",SendToLink,"You are not registered")
 
+def Load(link,cmd):
+  modulename=GetParam(cmd,1)
+  if not modulename:
+    link.send("Usage: load <modulename>")
+    return
+  if modulename=="builtin":
+    link.send("Cannot load builtin module")
+    return
+  if modulename in sys.modules:
+    link.send("There is already a %s module" % modulename)
+    return
+  log_info('Loading %s module' % modulename)
+  try:
+    __import__(modulename)
+    link.send('%s loaded' % modulename)
+  except Exception,e:
+    log_error('Failed to load module "%s": %s' % (modulename, str(e)))
+    link.send('An error occured')
+
+def Unload(link,cmd):
+  modulename=GetParam(cmd,1)
+  if not modulename:
+    link.send("Usage: unload <modulename>")
+    return
+  if modulename=="builtin":
+    link.send("Cannot unload builtin module")
+    return
+  if not modulename in sys.modules:
+    link.send("%s is not a dynamic module" % modulename)
+    return
+  log_info('Unloading %s module' % modulename)
+  UnregisterModule(modulename)
+  try:
+    del sys.modules[modulename]
+    link.send('%s unloaded' % modulename)
+  except Exception,e:
+    log_error('Failed to unload module "%s": %s' % (modulename, str(e)))
+    link.send('An error occured')
+
 def Reload(link,cmd):
   modulename=GetParam(cmd,1)
   if not modulename:
@@ -320,6 +359,8 @@ def RegisterCommands():
   RegisterCommand({'module': 'builtin', 'name': 'scanwho', 'function': ScanWho, 'admin': True, 'help': "Refresh users list in a channel"})
   RegisterCommand({'module': 'builtin', 'name': 'dump_users', 'function': DumpUsers, 'admin': True, 'help': "Dump users table to log"})
   RegisterCommand({'module': 'builtin', 'name': 'show_activity', 'function': ShowActivity, 'admin': True, 'help': "Show time since a user was last active"})
+  RegisterCommand({'module': 'builtin', 'name': 'load', 'function': Load, 'admin': True, 'help': "Load a module"})
+  RegisterCommand({'module': 'builtin', 'name': 'unload', 'function': Unload, 'admin': True, 'help': "Unload a module"})
   RegisterCommand({'module': 'builtin', 'name': 'reload', 'function': Reload, 'admin': True, 'help': "Reload a module"})
   RegisterCommand({'module': 'builtin', 'name': 'disable', 'function': Disable, 'admin': True, 'help': "Disable %s"%config.tipbot_name})
   RegisterCommand({'module': 'builtin', 'name': 'quit', 'function': Quit, 'admin': True, 'help': "Quit"})

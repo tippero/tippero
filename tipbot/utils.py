@@ -15,6 +15,7 @@ import json
 import httplib
 import time
 import math
+import string
 from decimal import *
 import tipbot.config as config
 import tipbot.coinspecs as coinspecs
@@ -79,6 +80,14 @@ def IsValidAddress(address):
     if address.startswith(prefix):
       return True
   return False
+
+def IsValidPaymentID(payment_id):
+  if len(payment_id)!=64:
+    return False
+  for char in payment_id:
+    if char not in string.hexdigits:
+      return False
+  return True
 
 # Code taken from the Python documentation
 def moneyfmt(value, places=2, curr='', sep=',', dp='.',

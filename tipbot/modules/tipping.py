@@ -23,6 +23,8 @@ import tipbot.config as config
 from tipbot.log import log_error, log_warn, log_info, log_log
 import tipbot.coinspecs as coinspecs
 from tipbot.utils import *
+from tipbot.user import User
+from tipbot.link import Link
 from tipbot.command_manager import *
 from tipbot.redisdb import *
 

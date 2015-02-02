@@ -61,10 +61,9 @@ def Withdraw(link,cmd):
   amount = GetParam(cmd,2)
   if amount:
     try:
-      famount=float(amount)
-      if (famount < 0):
+      amount = StringToUnits(amount)
+      if (amount <= 0):
         raise RuntimeError("")
-      amount = long(famount * coinspecs.atomic_units)
       amount += local_withdraw_fee
     except Exception,e:
       link.send("Invalid amount")

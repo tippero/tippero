@@ -273,11 +273,10 @@ def Bet(link,cmd):
     link.send('usage: !bet [<event name>] <outcome> <amount>')
     return
   try:
-    amount = float(amount)
+    units = StringToUnits(amount)
   except Exception,e:
     link.send('usage: !bet [<event name>] <outcome> <amount>')
     return
-  units = long(amount*coinspecs.atomic_units)
   if units <= 0:
     link.send("Invalid amount")
     return

@@ -38,10 +38,10 @@ def IsBetValid(link,amount,minbet,maxbet,potential_loss,max_loss,max_loss_ratio)
   if banned:
     return False, reason
   try:
+    units = StringToUnits(amount)
     amount = float(amount)
   except Exception,e:
     return False, "Invalid amount"
-  units=long(amount*coinspecs.atomic_units)
   if units <= 0:
     return False, "Invalid amount"
   if maxbet != None and amount > maxbet:
@@ -315,10 +315,9 @@ def ReserveBalance(link,cmd):
   rbal=GetParam(cmd,1)
   if rbal:
     try:
-      rbal=float(cmd[1])
+      rbal=StringToUnits(cmd[1])
       if rbal < 0:
         raise RuntimeError('negative balance')
-      rbal = long(rbal * coinspecs.atomic_units)
     except Exception,e:
       log_error('SetReserveBalance: invalid balance: %s' % str(e))
       link.send("Invalid balance")

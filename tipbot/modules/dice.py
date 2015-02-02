@@ -49,7 +49,7 @@ def Dice(link,cmd):
   identity=link.identity()
   try:
     amount=float(cmd[1])
-    units=long(amount*coinspecs.atomic_units)
+    units=StringToUnits(cmd[1])
     multiplier = float(cmd[2])
     overunder=GetParam(cmd,3)
   except Exception,e:

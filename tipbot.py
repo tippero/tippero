@@ -137,7 +137,7 @@ def AddBalance(link,cmd):
     link.send('usage: !addbalance [<nick>] <amount>')
     return
   try:
-    units = long(float(amount)*coinspecs.atomic_units)
+    units = StringToUnits(amount)
   except Exception,e:
     log_error('AddBalance: error converting amount: %s' % str(e))
     link.send('usage: !addbalance [<nick>] <amount>')

@@ -555,7 +555,7 @@ def Blackjack(link,cmd):
     return
   try:
     amount=float(cmd[1])
-    units=long(amount*coinspecs.atomic_units)
+    units=StringToUnits(cmd[1])
   except Exception,e:
     link.send("%s: usage: !blackjack amount" % link.user.nick)
     return

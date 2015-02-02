@@ -177,6 +177,13 @@ def TimeToString(seconds):
     return "%.2f millenia" % (seconds / (3600*24*365.25 * 100))
   return "like, forever, dude"
 
+def StringToUnits(s):
+  try:
+    return long(Decimal(s)*long(coinspecs.atomic_units))
+  except Exception,e:
+    log_error('Failed to convert %s to units: %s' % (s,str(e)))
+    raise
+
 def SendJSONRPCCommand(host,port,method,params):
   try:
     http = httplib.HTTPConnection(host,port,timeout=20)

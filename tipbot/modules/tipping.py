@@ -63,11 +63,10 @@ def Tip(link,cmd):
   identity=link.identity()
   try:
     who=cmd[1]
-    amount=float(cmd[2])
+    units=StringToUnits(cmd[2])
   except Exception,e:
     link.send("Usage: tip nick amount")
     return
-  units=long(amount*coinspecs.atomic_units)
   if units <= 0:
     link.send("Invalid amount")
     return
@@ -105,6 +104,7 @@ def Rain(link,cmd):
 
   try:
     amount=float(cmd[1])
+    units = StringToUnits(cmd[1])
   except Exception,e:
     link.send("Usage: rain amount [users]")
     return
@@ -122,7 +122,6 @@ def Rain(link,cmd):
   if users != None and users <= 0:
     link.send("Usage: rain amount [users]")
     return
-  units = long(amount * coinspecs.atomic_units)
 
   try:
     account = GetAccount(identity)
@@ -202,6 +201,7 @@ def RainActive(link,cmd):
     link.send("usage: !rainactive <amount> <hours> [<minfrac>]")
     return
   try:
+    units=StringToUnits(amount)
     amount=float(amount)
     if amount <= 0:
       raise RuntimeError("")
@@ -226,8 +226,6 @@ def RainActive(link,cmd):
       return
   else:
     minfrac = 0
-
-  units = long(amount * coinspecs.atomic_units)
 
   try:
     account = GetAccount(link)

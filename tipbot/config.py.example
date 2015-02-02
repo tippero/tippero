@@ -108,3 +108,11 @@ pinata_target_increment = 0.01
 pinata_winner_base_share = 0.75
 pinata_rain_remainder_share = 0.8
 pinata_carry_remainder_share = 0.17
+
+kitsune_max_bet = 1
+kitsune_min_bet = 0.001
+# how much are we prepared to lose
+kitsune_max_loss = 35
+# how much are we prepared to lose as a ratio of our current pot
+kitsune_max_loss_ratio = 0.1
+

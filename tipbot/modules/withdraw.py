@@ -78,7 +78,7 @@ def Withdraw(link,cmd):
 
   account = GetAccount(identity)
   try:
-    balance = redis_hget('accounts',account)
+    balance = redis_hget('balances',account)
     if balance == None:
       balance = 0
     balance=long(balance)

@@ -285,7 +285,7 @@ class IRCNetwork(Network):
       elif action == '352':
         try:
           who_chan = parts[3]
-          who_chan_user = parts[7]
+          who_chan_user = parts[7].lower()
           if not who_chan_user in self.userstable[who_chan]:
             self.userstable[who_chan][who_chan_user] = None
           log_log("New list of users in %s: %s" % (who_chan, str(self.userstable[who_chan].keys())))
@@ -299,6 +299,7 @@ class IRCNetwork(Network):
           log_info('who_chan: %s' % str(who_chan))
           log_info('who_chan_users: %s' % str(who_chan_users))
           for who_chan_user in who_chan_users:
+            who_chan_user=who_chan_user.lower()
             if not who_chan_user in self.userstable[who_chan]:
               if who_chan_user[0] in ["@","+"]:
                 who_chan_user = who_chan_user[1:]
@@ -366,7 +367,7 @@ class IRCNetwork(Network):
 
       elif action == 'NICK':
         nick = GetNick(who)
-        new_nick = cparts[len(cparts)-1]
+        new_nick = cparts[len(cparts)-1].lower()
         log_info('%s renamed to %s' % (nick, new_nick))
         for c in self.userstable:
           log_log('checking %s' % c)

@@ -45,6 +45,7 @@ def RunNextCommand(link,registered):
     return
   try:
     link=calltable[identity][0][0]
+    Lock()
     if registered:
       calltable[identity][0][1](link,calltable[identity][0][2])
     else:
@@ -53,6 +54,8 @@ def RunNextCommand(link,registered):
   except Exception, e:
     log_error('RunNextCommand: Exception in action, continuing: %s' % str(e))
     del calltable[identity][0]
+  finally:
+    Unlock()
 
 def Commands(link,cmd):
   if IsAdmin(link):
@@ -159,7 +162,13 @@ def OnCommand(link,cmd,check_admin,check_registered):
     elif 'registered' in c and c['registered']:
       check_registered(link,c['function'],cmd,SendToProxy,"You must be registered with Freenode")
     else:
-      c['function'](link,cmd)
+      Lock()
+      try:
+        c['function'](link,cmd)
+      except:
+        raise
+      finally:
+        Unlock()
   else:
     silent = False
     if link.network.name in config.silent_invalid_commands:
@@ -174,9 +183,12 @@ def RunIdleFunctions(param=None):
     if 'idle' in modules[module]:
       f=modules[module]['idle']
       try:
+        Lock()
         f(param)
       except Exception,e:
         log_error("Exception running idle function %s from module %s: %s" % (str(f),module,str(e)))
+      finally:
+        Unlock()
 
 def RunModuleHelpFunction(module,link):
   if module in modules:

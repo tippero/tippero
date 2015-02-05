@@ -14,6 +14,7 @@ import hashlib
 import json
 import httplib
 import time
+import threading
 import math
 import string
 from decimal import *
@@ -28,6 +29,8 @@ networks=[]
 cached_tipbot_balance=None
 cached_tipbot_unlocked_balance=None
 cached_tipbot_balance_timestamp=None
+
+core_lock = threading.Lock()
 
 def GetPassword(name):
   try:
@@ -359,4 +362,11 @@ def GetNetworkByType(type):
     if isinstance(network,type):
       return network
   return None
+
+def Lock():
+  return core_lock.acquire()
+
+def Unlock():
+  core_lock.release()
+  return True
 

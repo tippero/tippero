@@ -73,8 +73,14 @@ def redis_rpush(k,v):
 def redis_lpop(k):
   return redisdb.lpop(k)
 
+def redis_llen(k):
+  return redisdb.llen(k)
+
 def redis_lindex(k,n):
   return redisdb.lindex(k,n)
+
+def redis_lset(k,i,v):
+  return redisdb.lset(k,i,v)
 
 def redis_zincrby(t,k,s):
   return redisdb.zincrby(t,k,s)
@@ -112,7 +118,9 @@ def CompatibilityCheck():
     if not p.sismember: raise RuntimeError('sismember call not found')
     if not p.rpush: raise RuntimeError('rpush call not found')
     if not p.lpop: raise RuntimeError('lpop call not found')
+    if not p.llen: raise RuntimeError('llen call not found')
     if not p.lindex: raise RuntimeError('lindex call not found')
+    if not p.lset: raise RuntimeError('lset call not found')
     if not p.zincrby: raise RuntimeError('zincrby call not found')
     if not p.zscore: raise RuntimeError('zscore call not found')
     if not p.zrangebylex: raise RuntimeError('zrangebylex call not found')

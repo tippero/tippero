@@ -30,7 +30,7 @@ cached_tipbot_balance=None
 cached_tipbot_unlocked_balance=None
 cached_tipbot_balance_timestamp=None
 
-core_lock = threading.Lock()
+core_lock = threading.RLock()
 
 def GetPassword(name):
   try:

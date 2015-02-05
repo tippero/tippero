@@ -39,13 +39,13 @@ class Network:
     self.on_command=on_command
     self.on_identified=on_identified
 
-  def get_last_active_time(user_name,group_name=None):
+  def get_last_active_time(self,user_name,group_name=None):
     return None
 
-  def get_active_users(seconds,group_name=None):
+  def get_active_users(self,seconds,group_name=None):
     return []
 
-  def get_users(group_name=None):
+  def get_users(self,group_name=None):
     return []
 
   def update_users_list(self,group_name=None):

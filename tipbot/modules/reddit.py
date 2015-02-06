@@ -115,14 +115,13 @@ class RedditNetwork(Network):
     self.last_seen_ids.add(item.id)
     redis_sadd('reddit:last_seen_ids',item.id)
 
-    if item.body.lower().find(self.keyword.lower()) >= 0:
+    if is_pm or item.body.lower().find(self.keyword.lower()) >= 0:
       group=None
       #if not is_pm and hasattr(item,'subreddit'):
       #  group=Group(self,item.subreddit.display_name)
       group = None
       self.items_cache[item.fullname]=item
       link=Link(self,User(self,author),group,item)
-      log_info('Found keyword %s from %s' % (self.keyword,link.identity()))
       for line in item.body.split('\n'):
         if is_pm:
           exidx=line.find('!')

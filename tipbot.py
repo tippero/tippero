@@ -158,6 +158,41 @@ def AddBalance(link,cmd):
     return
   link.send("%s's balance is now %s" % (aidentity,AmountToString(balance)))
 
+def LinkAccount(link,cmd):
+  linked_identity=GetParam(cmd,1)
+  if linked_identity == None:
+    link.send('usage: !link_account [<network>:]<username>')
+    return
+  linked_identity=IdentityFromString(link,linked_identity)
+  ok,reason=LinkCore(link,linked_identity)
+  if not ok:
+    link.send('An error occured')
+    return
+
+  if reason=='same-identity':
+    link.send('An account is already implicitly linked to itself')
+  elif reason=='already' or reason=='ok':
+    link.send('%s now needs to link to %s too' % (linked_identity,link.identity()))
+  elif reason=='same-account':
+    link.send('%s and %s are already linked' % (link.identity(),linked_identity))
+  elif reason=='linked':
+    link.send('Accounts linked')
+
+def LinkingAccounts(link,cmd):
+  link.send_private('If you have several accounts with %s, you can link them together' % config.tipbot_name)
+  link.send_private('This will merge those accounts\' balances, so you can use your balance')
+  link.send_private('from any of these accounts. Similarly, payments made to any of your accounts')
+  link.send_private('will be available to all accounts. In order to link accounts A and B,')
+  link.send_private('both need to link to the other account: A to B, and B to A')
+  link.send_private('When logged in as A, use the command: !link_account B')
+  link.send_private('When logged in as B, use the command: !link_account A')
+  link.send_private('When both are done, the accounts will be linked, and you will be able to use')
+  link.send_private('any account interchangeably. If the accounts are on different networks')
+  link.send_private('(eg, IRC and Reddit), the user names need to be prefixed with the network\'s')
+  link.send_private('name (irc: for IRC, reddit:), like this: !link_account reddit:myredditname')
+  link.send_private('Linking accounts is irreversible, so make sure you only link to accounts')
+  link.send_private('under your control')
+
 def ScanWho(link,cmd):
   link.network.update_users_list(link.group.name if link.group else None)
 
@@ -351,6 +386,8 @@ def RegisterCommands():
   RegisterCommand({'module': 'builtin', 'name': 'commands', 'parms': '[module]', 'function': Commands, 'help': "Displays list of commands"})
   RegisterCommand({'module': 'builtin', 'name': 'isregistered', 'function': IsRegistered, 'help': "show whether you are currently registered with freenode"})
   RegisterCommand({'module': 'builtin', 'name': 'balance', 'function': GetBalance, 'registered': True, 'help': "show your current balance"})
+  RegisterCommand({'module': 'builtin', 'name': 'link_account', 'function': LinkAccount, 'registered': True, 'help': "Link your account to another - see !linking_accounts"})
+  RegisterCommand({'module': 'builtin', 'name': 'linking_accounts', 'function': LinkingAccounts, 'registered': True, 'help': "Help about linking accounts"})
   RegisterCommand({'module': 'builtin', 'name': 'info', 'function': Info, 'help': "infornmation about %s" % config.tipbot_name})
 
   RegisterCommand({'module': 'builtin', 'name': 'height', 'function': GetHeight, 'admin': True, 'help': "Get current blockchain height"})

@@ -331,6 +331,48 @@ def RetrieveBalance(link):
     log_error('RetrieveBalance: exception: %s' % str(e))
     raise
 
+def LinkCore(link,other_identity):
+  try:
+    identity=link.identity()
+    if identity==other_identity:
+      return True, "same-identity"
+    links=redis_hget('links',identity)
+    if links:
+      if other_identity in links.split(chr(0)):
+        return True, "already"
+      links=links+chr(0)+other_identity
+    else:
+      links=other_identity
+    redis_hset('links',identity,links)
+
+    links=redis_hget('links',other_identity)
+    if links:
+      if identity in links.split(chr(0)):
+        # we have both
+        account=redis_hget('accounts',identity)
+        other_account=redis_hget('accounts',other_identity)
+        if account==other_account:
+          log_info('%s and %s already have the same account: %s' % (identity,other_identity,account))
+          return True, "same-account"
+
+        balance=long(redis_hget('balances',account))
+        log_info('Linking accounts %s (%s) and %s (%s)' % (account,identity,other_account,other_identity))
+        p=redis_pipeline()
+        p.hincrby('balances',other_account,balance)
+        p.hincrby('balances',account,-balance)
+        accounts=redis_hgetall('accounts')
+        for a in accounts:
+          if accounts[a]==account:
+            log_info('Changing %s\'s account from %s to %s' % (a,account,other_account))
+            p.hset('accounts',a,other_account)
+        p.execute()
+        return True, "linked"
+  except Exception,e:
+    log_error('Error linking %s and %s: %s' % (identity,other_identity,str(e)))
+    return False, "error"
+
+  return True, "ok"
+
 def IdentityFromString(link,s):
   if s.find(':') == -1:
     network = link.network

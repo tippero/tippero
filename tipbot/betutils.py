@@ -149,7 +149,7 @@ def RecordGameResult(link,game,win,lose,units):
     tname="%s:stats:"%game+identity
     rtname="%s:stats:reset:"%game+identity
     alltname="%s:stats:"%game
-    nalltname="%s:stats:"%game
+    nalltname="%s:stats:%s:"%(game,link.network.name)
     zhtname="%s:zstats:hourly:"%game
     zdtname="%s:zstats:daily:"%game
     nzhtname="%s:zstats:%s:hourly:"%(game,link.network.name)

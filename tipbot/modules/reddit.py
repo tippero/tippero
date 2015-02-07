@@ -127,6 +127,8 @@ class RedditNetwork(Network):
           exidx=line.find('!')
           if exidx!=-1 and len(line)>exidx+1 and line[exidx+1] in string.ascii_letters and self.is_acceptable_command_prefix(line[:exidx]):
             cmd=line[exidx+1:].split(' ')
+            while '' in cmd:
+              cmd.remove('')
             cmd[0] = cmd[0].strip(' \t\n\r')
             log_info('Found command from %s: %s' % (link.identity(), str(cmd)))
             if self.on_command:

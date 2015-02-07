@@ -316,6 +316,8 @@ class IRCNetwork(Network):
         if exidx != -1 and len(text)>exidx+1 and text[exidx+1] in string.ascii_letters and self.is_acceptable_command_prefix(text[:exidx]):
             cmd = text.split('!')[1]
             cmd = cmd.split(' ')
+            while '' in cmd:
+              cmd.remove('')
             cmd[0] = cmd[0].strip(' \t\n\r')
 
             log_log('Found command from %s: "%s" in channel "%s"' % (who, str(cmd), str(chan)))

@@ -163,7 +163,11 @@ def LinkAccount(link,cmd):
   if linked_identity == None:
     link.send('usage: !link_account [<network>:]<username>')
     return
-  linked_identity=IdentityFromString(link,linked_identity)
+  try:
+    linked_identity=IdentityFromString(link,linked_identity)
+  except Exception,e:
+    link.send('%s is invalid' % linked_identity)
+    return
   ok,reason=LinkCore(link,linked_identity)
   if not ok:
     link.send('An error occured')

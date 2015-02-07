@@ -381,6 +381,9 @@ def IdentityFromString(link,s):
     parts=s.split(':')
     network_name=parts[0]
     network=GetNetworkByName(network_name)
+    if not network:
+      log_error('unknown network: %s' % network_name)
+      raise RuntimeError('Unknown network: %s' % network_name)
     nick=parts[1]
   return network.name+':'+network.canonicalize(nick)
 

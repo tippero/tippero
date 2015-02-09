@@ -197,6 +197,7 @@ def Win(link,blackjack):
     link.send("%s wins %s on hand %d - BLACKJACK! - %s, dealer %s" % (link.user.nick, AmountToString(win_units), idx+1, PlayerHandsToString(link,True), HandToString(dealer_hand,identity in utf8users)))
   else:
     link.send("%s wins %s on hand %d - %s, dealer %s" % (link.user.nick, AmountToString(win_units), idx+1, PlayerHandsToString(link,True), HandToString(dealer_hand, identity in utf8users)))
+  players[identity]['amount'] -= players[identity]['player_hands'][idx]['amount']
   players[identity]['player_hands'][idx]['finished'] = True
   UpdateBlackjackRecord(link,True,False,win_units)
   SwitchToNextHand(link)
@@ -211,6 +212,7 @@ def Lose(link,blackjack):
     link.send("%s loses %s on hand %d - %s, dealer BLACKJACK! %s" % (link.user.nick, AmountToString(lose_units), idx+1, PlayerHandsToString(link,True), HandToString(dealer_hand, identity in utf8users)))
   else:
     link.send("%s loses %s on hand %d - %s, dealer %s" % (link.user.nick, AmountToString(lose_units), idx+1, PlayerHandsToString(link,True), HandToString(dealer_hand, identity in utf8users)))
+  players[identity]['amount'] -= players[identity]['player_hands'][idx]['amount']
   players[identity]['player_hands'][idx]['finished'] = True
   UpdateBlackjackRecord(link,False,True,lose_units)
   SwitchToNextHand(link)
@@ -224,6 +226,7 @@ def Draw(link,blackjack):
     link.send("%s pushes on hand %d - BLACKJACK vs BLACKJACK! - %s, dealer %s" % (link.user.nick, idx+1, PlayerHandsToString(link,True), HandToString(dealer_hand, identity in utf8users)))
   else:
     link.send("%s pushes on hand %d - %s, dealer %s" % (link.user.nick, idx+1, PlayerHandsToString(link,True), HandToString(dealer_hand, identity in utf8users)))
+  players[identity]['amount'] -= players[identity]['player_hands'][idx]['amount']
   players[identity]['player_hands'][idx]['finished'] = True
   UpdateBlackjackRecord(link,False,False,0)
   SwitchToNextHand(link)

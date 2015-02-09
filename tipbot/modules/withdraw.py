@@ -1,7 +1,8 @@
 #!/bin/python
 #
 # Cryptonote tipbot - withdrawal commands
-# Copyright 2014 moneromooo
+# Copyright 2014,2015 moneromooo
+# DNS code largely copied from Electrum OpenAlias plugin, Copyright 2014-2015 The monero Project
 #
 # The Cryptonote tipbot is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
@@ -12,6 +13,15 @@
 import redis
 import json
 import string
+import re
+import dns.name
+import dns.dnssec
+import dns.resolver
+import dns.message
+import dns.query
+import dns.rdatatype
+import dns.rdtypes.ANY.TXT
+import dns.rdtypes.ANY.NS
 from tipbot.log import log_error, log_warn, log_info, log_log
 import tipbot.coinspecs as coinspecs
 import tipbot.config as config
@@ -38,6 +48,63 @@ def CheckDisableWithdraw():
   if config.disable_withdraw_on_error:
     DisableWithdraw(None,None)
 
+def ValidateDNSSEC(address):
+  log_info('Validating DNSSEC for %s' % address)
+  try:
+    resolver = dns.resolver.get_default_resolver()
+    ns = resolver.nameservers[0]
+    parts = address.split('.')
+    for i in xrange(len(parts),0,-1):
+      subpart = '.'.join(parts[i-1:])
+      query = dns.message.make_query(subpart,dns.rdatatype.NS)
+      response = dns.query.udp(query,ns,1)
+      if response.rcode() != dns.rcode.NOERROR:
+        return False
+      if len(response.authority) > 0:
+        rrset = response.authority[0]
+      else:
+        rrset = response.answer[0]
+      rr = rrset[0]
+      if rr.rdtype == dns.rdatatype.SOA:
+        continue
+      query = dns.message.make_query(subpart,dns.rdatatype.DNSKEY,want_dnssec=True)
+      response = dns.query.udp(query,ns,1)
+      if response.rcode() != 0:
+        return False
+      answer = response.answer
+      if len(answer) != 2:
+        return False
+      name = dns.name.from_text(subpart)
+      dns.dnssec.validate(answer[0],answer[1],{name:answer[0]})
+      return True
+  except Exception,e:
+    log_error('Failed to validate DNSSEC for %s: %s' % (address, str(e)))
+    return False
+
+def ResolveCore(address,ctype):
+  log_info('Resolving %s address for %s' % (ctype,address))
+  address=address.replace('@','.')
+  if not '.' in address:
+    return False,'invalid address'
+
+  try:
+    for attempt in range(3):
+      resolver = dns.resolver.Resolver()
+      resolver.timeout = 2
+      resolver.lifetime = 2
+      records = resolver.query(address,dns.rdatatype.TXT)
+      for record in records:
+        s = record.strings[0]
+        if s.lower().startswith('oa1:%s' % ctype.lower()):
+          a = re.sub('.*recipient_address[ \t]*=[ \t]*\"?([A-Za-z0-9]+)\"?.*','\\1',s)
+          if IsValidAddress(a):
+            log_info('Found %s address at %s: %s' % (ctype,address,a))
+            return True, [a,ValidateDNSSEC(address)]
+  except Exception,e:
+    log_error('Error resolving %s: %s' % (address,str(e)))
+
+  return False, 'not found'
+
 def Withdraw(link,cmd):
   identity=link.identity()
 
@@ -54,6 +121,20 @@ def Withdraw(link,cmd):
   except Exception,e:
     link.send("Usage: withdraw address [amount] [paymentid]")
     return
+
+  if '.' in address:
+    ok,extra=ResolveCore(address,coinspecs.symbol)
+    if not ok:
+      link.send('Error: %s' % extra)
+      return
+    a=extra[0]
+    dnssec=extra[1]
+    if not dnsssec:
+      link.send('%s address %s was found for %s' % (coinspecs.name,a,address))
+      link.send('Trust chain could not be verified, so withdrawal was not automatically performed')
+      link.send('Withdraw using this %s address if it is correct' % coinspecs.name)
+      return
+    address=a
 
   if not IsValidAddress(address):
     link.send("Invalid address")
@@ -153,9 +234,28 @@ def Withdraw(link,cmd):
     log_error('Withdraw: FAILED TO SUBTRACT BALANCE: exception: %s' % str(e))
     CheckDisableWithdraw()
 
+def Resolve(link,cmd):
+  try:
+    address=GetParam(cmd,1)
+  except Exception,e:
+    link.send('usage: !resolve <address>')
+    return
+  ok,extra=ResolveCore(address,coinspecs.symbol)
+  if not ok:
+    link.send('Error: %s' % extra)
+    return
+  a=extra[0]
+  dnssec=extra[1]
+  if dnssec:
+    link.send('Found %s address at %s: %s' % (coinspecs.symbol,address,a))
+  else:
+    link.send('Found %s address at %s via insecure DNS: %s' % (coinspecs.symbol,address,a))
+
 def Help(link):
   fee = config.withdrawal_fee or coinspecs.min_withdrawal_fee
   min_amount = config.min_withdraw_amount or fee
+  link.send_private("Partial or full withdrawals can be made to any %s address" % coinspecs.name)
+  link.send_private("OpenAlias is supported, to pay directly to a domain name which uses it")
   link.send_private("Minimum withdrawal: %s" % AmountToString(min_amount))
   link.send_private("Withdrawal fee: %s" % AmountToString(fee))
 
@@ -168,10 +268,18 @@ RegisterModule({
 RegisterCommand({
   'module': __name__,
   'name': 'withdraw',
-  'parms': '<address> [<amount>] [paymentid]',
+  'parms': '<address>|<domain-name> [<amount>] [paymentid]',
   'function': Withdraw,
   'registered': True,
   'help': "withdraw part or all of your balance"
+})
+RegisterCommand({
+  'module': __name__,
+  'name': 'resolve',
+  'parms': '<address>',
+  'function': Resolve,
+  'registered': True,
+  'help': "Resolve a %s address from DNS with OpenAlias" % coinspecs.name
 })
 RegisterCommand({
   'module': __name__,

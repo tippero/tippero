@@ -99,7 +99,9 @@ class RedditNetwork(Network):
     return False
 
   def _parse(self,item,is_pm):
-    author=self.canonicalize(item.author.name) if hasattr(item,'author') else None
+    if not hasattr(item,'author'):
+      return
+    author=self.canonicalize(item.author.name)
     if author==self.canonicalize(self.login):
       return
 

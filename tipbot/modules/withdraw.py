@@ -237,6 +237,8 @@ def Withdraw(link,cmd):
 def Resolve(link,cmd):
   try:
     address=GetParam(cmd,1)
+    if not address:
+      raise RuntimeError("")
   except Exception,e:
     link.send('usage: !resolve <address>')
     return

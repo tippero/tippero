@@ -416,13 +416,13 @@ def GetBasicStrategyMove(link):
   identity=link.identity()
   player_hand = GetPlayerCurrentHand(link)
   player_has_soft_hand = IsSoftHand(player_hand)
-  player_can_double = len(player_hand) == 2
+  player_first_card = player_hand[0].split(':')[0]
+  player_second_card = player_hand[1].split(':')[0]
+  player_can_double = len(player_hand) == 2 and player_first_card != 'A'
   player_has_split = len(players[identity]['player_hands']) > 1
   player_can_split = len(player_hand) == 2 and len(players[identity]['player_hands']) < config.blackjack_split_to
   player_score = GetHandScore(player_hand)
-  player_first_card = player_hand[0].split(':')[0]
-  player_second_card = player_hand[1].split(':')[0]
-  player_has_pair = player_first_card == player_second_card
+  player_has_pair = player_first_card == player_second_card and len(player_hand)==2
   dealer_hand = players[identity]['dealer_hand']
   dealer_upcard = dealer_hand[0].split(':')[0]
 
@@ -469,13 +469,9 @@ def GetBasicStrategyMove(link):
         return "hit"
 
   if player_has_soft_hand:
-    if player_first_card == 'A':
-      other_card = player_second_card
-    else:
-      other_card = player_first_card
-    if other_card in ['8', '9']:
+    if player_score in [8, 9]:
       return "stand"
-    if other_card == '7':
+    if player_score == 7:
       if dealer_upcard in ['2', '7', '8']:
         return "stand"
       if dealer_upcard in ['3', '4', '5', '6']:
@@ -484,21 +480,21 @@ def GetBasicStrategyMove(link):
         else:
           return "stand"
       return "hit"
-    if other_card == '6':
+    if player_score == 6:
       if dealer_upcard in ['3', '4', '5', '6']:
         if player_can_double:
           return "double"
         else:
           return "hit"
       return "hit"
-    if other_card in ['4', '5']:
+    if player_score in [4, 5]:
       if dealer_upcard in ['4', '5', '6']:
         if player_can_double:
           return "double"
         else:
           return "hit"
       return "hit"
-    if other_card in ['2', '3']:
+    if player_score in [2, 3]:
       if dealer_upcard in ['5', '6']:
         if player_can_double:
           return "double"

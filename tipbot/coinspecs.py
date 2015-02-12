@@ -39,6 +39,16 @@ coinspecs = {
     "address_prefix": ['D'], # allowed prefixes of addresses
     "min_withdrawal_fee": 1000000,
     "web_wallet_url": None,
-  }
+  },
+  "monerito": {
+    "name": "Monerito",
+    "symbol": "XMR",
+    "atomic_units": 1e6,
+    "denominations": [[1000000000000000000, 1000000, "moneritos"]],
+    "address_length": [95, 95], # min/max size of addresses
+    "address_prefix": ['4', '9'], # allowed prefixes of addresses
+    "min_withdrawal_fee": 10000000000,
+    "web_wallet_url": "https://mymonero.com/", # None is there's none
+  },
 }
 

@@ -719,7 +719,7 @@ def Insurance(link,cmd):
   insurance_units = units / 2
   enough, reason = IsPlayerBalanceAtLeast(link,units + insurance_units)
   if not enough:
-    link.send("%s: you do not have enough %s in your account to insure with %s" % (link.user.nick,coinspecs.name,idx+1,AmountToString(insurance_units)))
+    link.send("%s: you do not have enough %s in your account to insure with %s" % (link.user.nick,coinspecs.name,AmountToString(insurance_units)))
     return
   if IsBlackjack(dealer_hand):
     Lose(link,True)

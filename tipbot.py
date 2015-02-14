@@ -543,6 +543,6 @@ while len(networks)>0:
   OnIdle()
 
 
-log_info('shutting down redis')
-redisdb.shutdown()
+log_info('saving redis')
+redisdb.bgsave()
 log_info('exiting')

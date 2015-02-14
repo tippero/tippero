@@ -19,6 +19,8 @@ import base64
 import re
 import tipbot.config as config
 from tipbot.log import log, log_error, log_warn, log_info, log_log
+from tipbot.user import User
+from tipbot.link import Link
 from tipbot.utils import *
 from tipbot.network import *
 from tipbot.command_manager import *

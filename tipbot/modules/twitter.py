@@ -17,6 +17,8 @@ import re
 import tweepy
 import tipbot.config as config
 from tipbot.log import log_error, log_warn, log_info, log_log
+from tipbot.user import User
+from tipbot.link import Link
 from tipbot.utils import *
 from tipbot.command_manager import *
 from tipbot.network import *

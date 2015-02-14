@@ -25,6 +25,8 @@ import dns.rdtypes.ANY.NS
 from tipbot.log import log_error, log_warn, log_info, log_log
 import tipbot.coinspecs as coinspecs
 import tipbot.config as config
+from tipbot.user import User
+from tipbot.link import Link
 from tipbot.utils import *
 from tipbot.redisdb import *
 from tipbot.command_manager import *

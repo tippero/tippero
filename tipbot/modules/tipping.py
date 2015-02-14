@@ -179,7 +179,7 @@ def Rain(link,cmd):
       a = GetAccount(user)
       pipe.hincrby("balances",a,user_units)
       if enumerate_users:
-        msg = msg + " " + NickFromIdentity(user)
+        msg = msg + " " + NickFromIdentity(user.identity())
     pipe.execute()
     link.send("%s" % msg)
 

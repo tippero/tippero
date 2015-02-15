@@ -50,6 +50,7 @@ class RedditNetwork(Network):
       self.update_period=cfg['update_period']
       self.load_limit=cfg['load_limit']
       self.keyword=cfg['keyword']
+      self.use_unread_api=cfg['use_unread_api']
 
       self.reddit=praw.Reddit(user_agent=user_agent)
       self.reddit.login(self.login,password)
@@ -152,6 +153,10 @@ class RedditNetwork(Network):
                   self.on_command(link,synthetic_cmd)
                 except Exception,e:
                   log_error('Failed to tip %s\'s parent: %s' % (item.id,str(e)))
+    try:
+      item.mark_as_read()
+    except Exception,e:
+      log_warning('Failed to mark %s as read: %s' % (item.id,str(e)))
 
   def _schedule_reply(self,item,recipient,text):
     log_log('scheduling reply to %s:%s: %s' % (item.id if item else '""',recipient or '""',text))
@@ -232,17 +237,20 @@ class RedditNetwork(Network):
       self.last_seen_ids=redis_smembers('reddit:last_seen_ids')
       log_log('loaded last seen ids: %s ' % str(self.last_seen_ids))
 
-    if self.logged_in:
-      # get_unread doesn't seem to work
+    if self.use_unread_api:
+      for message in self.reddit.get_unread():
+        self._parse(message,not message.was_comment)
+
+    else:
       messages=self.reddit.get_inbox()
       for message in messages:
         if not message.was_comment:
           self._parse(message,True)
 
-    sr=self.reddit.get_subreddit("+".join(self.subreddits))
-    comments=sr.get_comments(limit=self.load_limit)
-    for comment in comments:
-      self._parse(comment,False)
+      sr=self.reddit.get_subreddit("+".join(self.subreddits))
+      comments=sr.get_comments(limit=self.load_limit)
+      for comment in comments:
+        self._parse(comment,False)
 
     while self._post_next_reply():
       pass

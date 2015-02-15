@@ -59,6 +59,7 @@ network_config = {
     'user_agent': tipbot_name,
     'update_period': 90,
     'load_limit': 100,
+    'use_unread_api': True,
   },
   'twitter': {
     'login': 'tipperome',

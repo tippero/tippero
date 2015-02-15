@@ -166,6 +166,8 @@ def Help(link):
   link.send_private("You can send %s to your account:" % coinspecs.name);
   address=GetTipbotAddress() or 'ERROR'
   link.send_private("  Address: %s" % address)
+  if config.openalias_address != None:
+    link.send_private("    (or %s when using OpenAlias)" % config.openalias_address)
   link.send_private("  Payment ID: %s" % GetPaymentID(link))
   link.send_private("Incoming transactions are credited after %d confirmations" % config.payment_confirmations)
 

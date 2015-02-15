@@ -57,9 +57,10 @@ network_config = {
     'login': 'testbx',
     'keyword': '/u/testbx',
     'user_agent': tipbot_name,
-    'update_period': 90,
+    'update_period': 35,
     'load_limit': 100,
     'use_unread_api': True,
+    'cache_timeout': 30,
   },
   'twitter': {
     'login': 'tipperome',

@@ -51,8 +51,9 @@ class RedditNetwork(Network):
       self.load_limit=cfg['load_limit']
       self.keyword=cfg['keyword']
       self.use_unread_api=cfg['use_unread_api']
+      self.cache_timeout=cfg['cache_timeout']
 
-      self.reddit=praw.Reddit(user_agent=user_agent)
+      self.reddit=praw.Reddit(user_agent=user_agent,cache_timeout=self.cache_timeout)
       self.reddit.login(self.login,password)
       self.items_cache=dict()
 

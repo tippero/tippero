@@ -471,9 +471,9 @@ def GetBasicStrategyMove(link):
         return "hit"
 
   if player_has_soft_hand:
-    if player_score in [8, 9]:
+    if player_score in [18, 19]:
       return "stand"
-    if player_score == 7:
+    if player_score == 17:
       if dealer_upcard in ['2', '7', '8']:
         return "stand"
       if dealer_upcard in ['3', '4', '5', '6']:
@@ -482,21 +482,21 @@ def GetBasicStrategyMove(link):
         else:
           return "stand"
       return "hit"
-    if player_score == 6:
+    if player_score == 16:
       if dealer_upcard in ['3', '4', '5', '6']:
         if player_can_double:
           return "double"
         else:
           return "hit"
       return "hit"
-    if player_score in [4, 5]:
+    if player_score in [14, 15]:
       if dealer_upcard in ['4', '5', '6']:
         if player_can_double:
           return "double"
         else:
           return "hit"
       return "hit"
-    if player_score in [2, 3]:
+    if player_score in [12, 13]:
       if dealer_upcard in ['5', '6']:
         if player_can_double:
           return "double"

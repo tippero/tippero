@@ -67,6 +67,9 @@ network_config = {
     'login': 'tipperome',
     'update_period': 90,
     'keyword': '@tipperome',
+    'fs_location': '/tmp/twitter',
+    'fs_prefix_tree': 2,
+    'uri_base': 'http://127.0.0.1/',
   },
 }
 

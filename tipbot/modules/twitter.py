@@ -10,10 +10,14 @@
 #
 
 import sys
+import os
 import string
 import time
 import threading
 import re
+import hashlib
+import time
+from Crypto.Random.random import getrandbits
 import tweepy
 import tipbot.config as config
 from tipbot.log import log_error, log_warn, log_info, log_log
@@ -52,6 +56,13 @@ class TwitterNetwork(Network):
       atsecret=GetPassword(self.name+"/atsecret")
       self.update_period=cfg['update_period']
       self.keyword=cfg['keyword'].lower()
+      self.fs_location=cfg['fs_location']
+      self.fs_prefix_tree=cfg['fs_prefix_tree']
+      self.uri_base=cfg['uri_base']
+
+      if self.fs_location and not self._is_valid_location(self.fs_location):
+        log_error('Invalid location: %s' % self.fs_location)
+        return False
 
       self.items_cache=dict()
       self.last_seen_tweet_id=long(redis_get('twitter:last_seen_tweet_id'))
@@ -85,19 +96,23 @@ class TwitterNetwork(Network):
     self.twitter = None
 
   def send_group(self,group,msg,data=None):
-    return self._schedule_tweet(msg,data.id)
+    return self._schedule_tweet(msg,data)
 
   def send_user(self,user,msg,data=None):
     if data:
       # msg to reply to -> tweet
-      return self._schedule_tweet(msg,data.id)
+      return self._schedule_tweet(msg,data)
     else:
       return self._schedule_dm(msg,user)
 
-  def _schedule_tweet(self,msg,reply_to_id):
+  def _schedule_tweet(self,msg,reply_to_msg):
     try:
-      log_info('Scheduling tweet in reply to %s: %s' % (str(reply_to_id),msg))
-      reply="g:"+str(reply_to_id)+":"+msg
+      log_info('Scheduling tweet in reply to %s: %s' % (str(reply_to_msg.id),msg))
+      if self.uri_base:
+        uri=self._make_uri(msg)
+        name=self.canonicalize(reply_to_msg.user.screen_name)
+        msg="%s: %s" % (name,uri)
+      reply="g:"+str(reply_to_msg.id)+":"+msg
       redis_rpush('twitter:replies',reply)
     except Exception,e:
       log_error('Error scheduling tweet: %s' % str(e))
@@ -105,6 +120,10 @@ class TwitterNetwork(Network):
   def _schedule_dm(self,msg,user):
     try:
       log_info('Scheduling DM to %s: %s' % (str(user.nick),msg))
+      if self.uri_base:
+        uri=self._make_uri(msg)
+        nick=self.canonicalize(user.nick)
+        msg="%s: %s" % (nick,uri)
       reply="u:"+str(user.nick)+":"+msg
       redis_rpush('twitter:replies',reply)
     except Exception,e:
@@ -190,7 +209,7 @@ class TwitterNetwork(Network):
     return True
 
   def canonicalize(self,name):
-    if name[0]!='@':
+    if not name.startswith('@'):
       name='@'+name
     return name.lower()
 
@@ -203,7 +222,7 @@ class TwitterNetwork(Network):
       return True
     self.last_update_time=now
 
-    if False:
+    if True:
       results = self.twitter.direct_messages(since_id=self.last_seen_dm_id)
       for result in results:
         self._parse_dm(result)
@@ -233,5 +252,61 @@ class TwitterNetwork(Network):
       except Exception,e:
         log_error('Exception in TwitterNetwork:_check: %s' % str(e))
       time.sleep(1)
+
+  def _is_valid_location(self,location):
+    try:
+      path=os.path.abspath(location)
+      if not os.path.exists(path):
+        log_error('Path %s does not exist' % str(path))
+        return False
+      if not os.path.isdir(path):
+        log_error('%s is not a directory' % str(path))
+        return False
+      return True
+    except Exception,e:
+      log_error('Error checking path %s: %s' % (str(location),str(e)))
+      return False
+
+  def _check_and_create(self,filename,contents):
+    if len(filename)<=self.fs_prefix_tree:
+      log_error('Filename %s too small for prefix tree %d' % (filename,self.fs_prefix_tree))
+      return None
+    path=self.fs_location
+    split_path=''
+    for p in range(self.fs_prefix_tree):
+      path=os.path.join(path,filename[p])
+      split_path='/'.join([split_path,filename[p]])
+      if os.path.exists(path):
+        if not os.path.isdir(path):
+          log_log('notadir')
+          log_error('%s exists and is not a directory' % str(path))
+          return None
+      else:
+        os.mkdir(path)
+    fpath=os.path.join(path,filename[self.fs_prefix_tree:])
+    split_path='/'.join([split_path,filename[self.fs_prefix_tree:]])
+    if os.path.exists(fpath):
+      log_error('%s exists' % str(fpath))
+      return None
+    f=open(fpath,'w')
+    f.write(contents)
+    f.close()
+    return split_path
+
+  def _intern(self,contents):
+    base=str(time.time())+":"+str(getrandbits(128))+":"
+    for n in range(10000):
+      filename=hashlib.sha256(base+str(n)).hexdigest()
+      split_path=self._check_and_create(filename,contents)
+      if split_path:
+        return split_path
+    log_error('Failed to intern contents')
+    return None
+
+  def _make_uri(self,contents):
+    filename = self._intern(contents)
+    if not filename:
+      return None
+    return self.uri_base.rstrip("/") + "/" + filename.lstrip("/")
 
 RegisterNetwork("twitter",TwitterNetwork)

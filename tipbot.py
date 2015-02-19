@@ -432,84 +432,8 @@ def lower_nick(s,net):
   return news
 
 def MigrateRedis():
-  keys=redisdb.keys('*')
-  for key in keys:
-    if key.startswith('dice:stats:') and key.find('freenode:') == -1:
-      if key!="dice:stats:" and key!="dice:stats:*":
-        parts=key.split(':')
-        if len(parts)==3 or (len(parts)==4 and parts[2]=="reset"):
-          parts.insert(len(parts)-1,"freenode")
-          newkey=":".join(parts)
-          log_info('renaming %s to %s' % (key,newkey))
-          redisdb.rename(key,newkey)
-  for recordtype in ['playerseed', 'serverseed', 'rolls']:
-    hname='dice:%s'%recordtype
-    keys=redisdb.hgetall(hname)
-    for key in keys:
-      if key.find(':') == -1:
-        newkey='freenode:'+key
-        log_info('renaming field %s to %s in %s' % (key,newkey,hname))
-        redisdb.hset(hname,newkey,redisdb.hget(hname,key))
-        redisdb.hdel(hname,key)
+  pass
 
-  keys=redisdb.keys('*')
-  for key in keys:
-    if key.find(":zstats:") >= 0 and key.find(":freenode:") < 0:
-      altkey=key.replace(":zstats:",":zstats:freenode:")
-      if not redisdb.exists(altkey):
-        log_info('copying %s to %s' % (key,altkey))
-        redisdb.restore(altkey,0,redisdb.dump(key))
-    elif key.endswith(":stats:"):
-      altkey=key.replace(":stats:",":stats:freenode:")
-      if not redisdb.exists(altkey):
-        log_info('copying %s to %s' % (key,altkey))
-        redisdb.restore(altkey,0,redisdb.dump(key))
-
-  keys=redisdb.keys()
-  for key in keys:
-    if key.find("freenode:") >= 0 and not key.endswith("freenode:"):
-      altkey=lower_nick(key,"freenode:")
-      if altkey == key:
-        continue
-      for ck in keys:
-        if key != ck and lower_nick(ck,"freenode:")==altkey:
-          log_error('Found two congruent keys: %s and %s' % (key,ck))
-          exit()
-      log_info('renaming %s to %s' % (key,altkey))
-      redisdb.restore(altkey,0,redisdb.dump(key))
-      redisdb.delete(key)
-  for hashname in ['balances','paymentid','bookie:1','password','dice:serverseed','dice:playerseed','blackjack:serverseed','blackjack:playerseed']:
-    entries=redis_hgetall(hashname)
-    for k in entries.keys():
-      v=entries[k]
-      if v.find("freenode:") >= 0 and not v.endswith("freenode:"):
-        altv=lower_nick(v,"freenode:")
-        if altv == v:
-          continue
-        log_info('changing %s:%s value %s to %s' % (hashname,k,v,altv))
-        redis_hset(hashname,k,altv)
-
-      if k.find("freenode:") >= 0 and not k.endswith("freenode:"):
-        altkey=lower_nick(k,"freenode:")
-        if altkey == k:
-          continue
-        for ck in keys:
-          if k != ck and lower_nick(ck,"freenode:")==altkey:
-            log_error('Found two congruent keys in %s: %s and %s' % (hashname,k,ck))
-            exit()
-        log_info('renaming %s key %s to %s' % (hashname,k,altkey))
-        redisdb.hset(hashname,altkey,redis_hget(hashname,k))
-        redisdb.hdel(hashname,k)
-
-  if not redis_exists('accounts'):
-    idx=0
-    balances = redis_hgetall('balances')
-    for key in balances:
-      redis_hset('balances',idx,balances[key])
-      redis_hset('accounts',key,idx)
-      redis_hdel('balances',key)
-      idx += 1
-    redis_set('next_account_id',idx)
 
 RegisterCommands()
 redisdb = connect_to_redis(config.redis_host,config.redis_port)

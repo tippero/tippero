@@ -146,7 +146,7 @@ def Withdraw(link,cmd):
     amount = GetParam(cmd,2)
     paymentid = GetParam(cmd,3)
   else:
-    if IsValidPaymentID(GetParam(cmd,2)):
+    if GetParam(cmd,2) and IsValidPaymentID(GetParam(cmd,2)):
       amount = None
       paymentid = GetParam(cmd,2)
     else:

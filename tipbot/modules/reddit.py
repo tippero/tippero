@@ -142,8 +142,7 @@ class RedditNetwork(Network):
 
         else:
           # reddit special: +x as a reply means tip
-          # if is_root is not here, consider the item as a reply, but check parent_id
-          if not is_pm and (not hasattr(item,'is_root') or not item.is_root) and hasattr(item,'parent_id'):
+          if not is_pm and hasattr(item,'parent_id'):
             line=line.replace(self.keyword,'').strip()
             if re.match("\+[0-9]*\.[0-9]*",line):
               if self.on_command:

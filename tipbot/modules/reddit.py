@@ -105,6 +105,14 @@ class RedditNetwork(Network):
   def _parse(self,item,is_pm):
     if not hasattr(item,'author'):
       return
+    if not hasattr(item.author,'name'):
+      log_warn('author of %s has no name field, ignored' % str(item.id))
+      try:
+        item.mark_as_read()
+      except Exception,e:
+        log_warning('Failed to mark %s as read: %s' % (item.id,str(e)))
+      return
+
     author=self.canonicalize(item.author.name)
     if author==self.canonicalize(self.login):
       return

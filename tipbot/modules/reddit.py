@@ -152,12 +152,16 @@ class RedditNetwork(Network):
           # reddit special: +x as a reply means tip
           if not is_pm and hasattr(item,'parent_id'):
             line=line.replace(self.keyword,'').strip()
-            if re.match("\+[0-9]*\.[0-9]*",line):
+            if re.match("\+[0-9]*(\.[0-9]*)?",line):
               if self.on_command:
                 try:
                   parent_item=self.reddit.get_info(thing_id=item.parent_id)
+                  if not hasattr(parent_item,'author'):
+                    raise RuntimeError('Parent item has no author')
                   author=parent_item.author.name
-                  synthetic_cmd=['tip',author,line.replace('+','')]
+                  match=re.search("\+[0-9]*(\.[0-9]*)?",line)
+                  amount=match.group(0)
+                  synthetic_cmd=['tip',author,amount.replace('+','')]
                   log_log('Running synthetic command: %s' % (str(synthetic_cmd)))
                   self.on_command(link,synthetic_cmd)
                 except Exception,e:

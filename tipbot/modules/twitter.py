@@ -174,7 +174,7 @@ class TwitterNetwork(Network):
         target=match.group(0)
         if self.on_command:
           try:
-            synthetic_cmd=['tip',target,line.replace('+','').replace(target,'').strip()]
+            synthetic_cmd=['tip',target.replace('@',''),line.replace('+','').replace(target,'').strip()]
             log_log('Running synthetic command: %s' % (str(synthetic_cmd)))
             self.on_command(link,synthetic_cmd)
           except Exception,e:

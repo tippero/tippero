@@ -233,6 +233,7 @@ class TwitterNetwork(Network):
     # doesn't seem to obey since_id
     #results = self.twitter.mentions_timeline(since_id=self.last_seen_tweet_id)
     results = [status for status in tweepy.Cursor(self.twitter.mentions_timeline,q=self.keyword,since_id=self.last_seen_tweet_id).items(100)]
+    log_log('tweet list since %d: %s' % (long(self.last_seen_tweet_id),str(results)))
     for result in results:
       self._parse_tweet(result)
       if long(result.id) > self.last_seen_tweet_id:

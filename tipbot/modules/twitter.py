@@ -65,8 +65,8 @@ class TwitterNetwork(Network):
         return False
 
       self.items_cache=dict()
-      self.last_seen_tweet_id=long(redis_get('twitter:last_seen_tweet_id'))
-      self.last_seen_dm_id=long(redis_get('twitter:last_seen_dm_id'))
+      self.last_seen_tweet_id=redis_get('twitter:last_seen_tweet_id')
+      self.last_seen_dm_id=redis_get('twitter:last_seen_dm_id')
       log_log('loaded last seen id: tweet %s, dm %s' % (str(self.last_seen_tweet_id),str(self.last_seen_dm_id)))
 
       auth=tweepy.OAuthHandler(ckey,csecret)

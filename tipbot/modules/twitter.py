@@ -27,7 +27,7 @@ from tipbot.utils import *
 from tipbot.command_manager import *
 from tipbot.network import *
 
-amount_regexp="\+[0-9]*\.[0-9]*"
+amount_regexp="\+[0-9]*(\.[0-9]*)?"
 username_regexp="@[a-zA-Z0-9_]+|[a-zA-Z]+:[a-zA-Z0-9]+"
 
 force_parse_self = False

@@ -163,6 +163,7 @@ def Deposit(link,cmd):
   Help(link)
 
 def Help(link):
+  GetAccount(link.identity())
   link.send_private("You can send %s to your account:" % coinspecs.name);
   address=GetTipbotAddress() or 'ERROR'
   link.send_private("  Address: %s" % address)

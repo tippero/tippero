@@ -52,7 +52,10 @@ def PerformTip(link,whoid,units):
       p.hincrby("balances",account,-units);
       p.hincrby("balances",who_account,units)
       p.execute()
-      link.send("%s has tipped %s %s" % (NickFromIdentity(identity), NickFromIdentity(whoid), AmountToString(units)))
+      if units < coinspecs.atomic_units:
+        link.send("%s has tipped %s %s (%.16g %s)" % (NickFromIdentity(identity), NickFromIdentity(whoid), AmountToString(units), float(units) / coinspecs.atomic_units, coinspecs.name))
+      else:
+        link.send("%s has tipped %s %s" % (NickFromIdentity(identity), NickFromIdentity(whoid), AmountToString(units)))
     except Exception, e:
       log_error("Tip: Error updating redis: %s" % str(e))
       link.send("An error occured")

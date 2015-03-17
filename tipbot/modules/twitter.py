@@ -192,7 +192,7 @@ class TwitterNetwork(Network):
     try:
       if mtype == 'g':
         log_info('call: update_status(%s,%s)' % (str(text),str(data)))
-        self.twitter.update_status(text,data)
+        self.twitter.update_status(status=text,in_reply_to_status_id=data)
       elif mtype == 'u':
         log_info('call: send_direct_message(%s,%s)' % (str(data),str(text)))
         self.twitter.send_direct_message(user=data,text=text)

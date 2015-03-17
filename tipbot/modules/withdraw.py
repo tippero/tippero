@@ -194,7 +194,7 @@ def Withdraw(link,cmd):
     amount = balance
 
   if amount <= 0 or amount < local_min_withdraw_amount:
-    log_info("Withdraw: Minimum withdrawal balance: %s, %s cannot withdraw %s" % (AmountToString(config.min_withdraw_amount),nick,AmountToString(amount)))
+    log_info("Withdraw: Minimum withdrawal balance: %s, %s cannot withdraw %s" % (AmountToString(config.min_withdraw_amount),identity,AmountToString(amount)))
     link.send("Minimum withdrawal balance: %s, cannot withdraw %s" % (AmountToString(config.min_withdraw_amount),AmountToString(amount)))
     return
   try:

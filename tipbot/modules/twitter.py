@@ -172,9 +172,13 @@ class TwitterNetwork(Network):
         if not match:
           continue
         target=match.group(0)
+        match=re.search(amount_regexp,line.replace(target,'').strip())
+        if not match:
+          continue
+        amount=match.group(0)
         if self.on_command:
           try:
-            synthetic_cmd=['tip',target.replace('@',''),line.replace('+','').replace(target,'').strip()]
+            synthetic_cmd=['tip',target.replace('@','').strip(),amount.replace('+','').strip()]
             log_log('Running synthetic command: %s' % (str(synthetic_cmd)))
             self.on_command(link,synthetic_cmd)
           except Exception,e:

@@ -59,6 +59,8 @@ class TwitterNetwork(Network):
       self.fs_location=cfg['fs_location']
       self.fs_prefix_tree=cfg['fs_prefix_tree']
       self.uri_base=cfg['uri_base']
+      self.prefix_when_linked=cfg['prefix_when_linked']
+      self.fs_hash_length=cfg['fs_hash_length']
 
       if self.fs_location and not self._is_valid_location(self.fs_location):
         log_error('Invalid location: %s' % self.fs_location)
@@ -105,13 +107,26 @@ class TwitterNetwork(Network):
     else:
       return self._schedule_dm(msg,user)
 
+  def _can_be_sent_raw(self,msg):
+    # twitter rejects anything more than a few words
+    if len(msg) >= 140:
+      return False
+    # twitter seems to eat up dupes
+    if redis_sismember('twitter:message_hashes',hashlib.sha256(msg).hexdigest()):
+      return False
+    return True
+
   def _schedule_tweet(self,msg,reply_to_msg):
     try:
       log_info('Scheduling tweet in reply to %s: %s' % (str(reply_to_msg.id),msg))
       if self.uri_base:
-        uri=self._make_uri(msg)
         name=self.canonicalize(reply_to_msg.user.screen_name)
-        msg="%s: %s" % (name,uri)
+        msg="%s: %s" % (name,msg)
+        if self._can_be_sent_raw(msg):
+          redis_sadd('twitter:message_hashes',hashlib.sha256(msg).hexdigest())
+        else:
+          uri=self._make_uri(msg)
+          msg="%s: %s%s" % (name,self.prefix_when_linked,uri)
       reply="g:"+str(reply_to_msg.id)+":"+msg
       redis_rpush('twitter:replies',reply)
     except Exception,e:
@@ -121,9 +136,13 @@ class TwitterNetwork(Network):
     try:
       log_info('Scheduling DM to %s: %s' % (str(user.nick),msg))
       if self.uri_base:
-        uri=self._make_uri(msg)
         nick=self.canonicalize(user.nick)
         msg="%s: %s" % (nick,uri)
+        if self._can_be_sent_raw(msg):
+          redis_sadd('twitter:message_hashes',hashlib.sha256(msg).hexdigest())
+        else:
+          uri=self._make_uri(msg)
+          msg="%s: %s%s" % (nick,self.prefix_when_linked,uri)
       reply="u:"+str(user.nick)+":"+msg
       redis_rpush('twitter:replies',reply)
     except Exception,e:
@@ -301,7 +320,7 @@ class TwitterNetwork(Network):
   def _intern(self,contents):
     base=str(time.time())+":"+str(getrandbits(128))+":"
     for n in range(10000):
-      filename=hashlib.sha256(base+str(n)).hexdigest()
+      filename=hashlib.sha256(base+str(n)).hexdigest()[:self.fs_hash_length]
       split_path=self._check_and_create(filename,contents)
       if split_path:
         return split_path

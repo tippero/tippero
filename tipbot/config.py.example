@@ -69,7 +69,9 @@ network_config = {
     'keyword': '@tipperome',
     'fs_location': '/tmp/twitter',
     'fs_prefix_tree': 2,
+    'fs_hash_length': 32,
     'uri_base': 'http://127.0.0.1/',
+    'prefix_when_linked': 'see: ',
   },
 }
 

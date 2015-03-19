@@ -349,8 +349,8 @@ def LinkCore(link,other_identity):
     if links:
       if identity in links.split(chr(0)):
         # we have both
-        account=redis_hget('accounts',identity)
-        other_account=redis_hget('accounts',other_identity)
+        account=GetAccount(identity)
+        other_account=GetAccount(other_identity)
         if account==other_account:
           log_info('%s and %s already have the same account: %s' % (identity,other_identity,account))
           return True, "same-account"

@@ -337,6 +337,8 @@ class IRCNetwork(Network):
         else:
           self.userstable[chan][nick] = None
         log_log("New list of users in %s: %s" % (chan, str(self.userstable[chan].keys())))
+        if self.on_event:
+          self.on_event('user-joined',link=Link(self,User(self,nick),Group(self,chan)))
 
       elif action == 'PART':
         nick = GetNick(who)
@@ -346,6 +348,8 @@ class IRCNetwork(Network):
         else:
           del self.userstable[chan][nick]
         log_log("New list of users in %s: %s" % (chan, str(self.userstable[chan].keys())))
+        if self.on_event:
+          self.on_event('user-left',link=Link(self,User(self,nick),Group(self,chan)))
 
       elif action == 'QUIT':
         nick = GetNick(who)
@@ -357,6 +361,8 @@ class IRCNetwork(Network):
             removed_list = removed_list + " " + chan
             del self.userstable[chan][nick]
             log_log("New list of users in %s: %s" % (chan, str(self.userstable[chan].keys())))
+        if self.on_event:
+          self.on_event('user-left',link=Link(self,User(self,nick)))
 
       elif action == 'KICK':
         nick = parts[3].lower()
@@ -368,6 +374,8 @@ class IRCNetwork(Network):
             removed_list = removed_list + " " + chan
             del self.userstable[chan][nick]
             log_log("New list of users in %s: %s" % (chan, str(self.userstable[chan].keys())))
+        if self.on_event:
+          self.on_event('user-left',link=Link(self,User(self,nick)))
 
       elif action == 'NICK':
         nick = GetNick(who)
@@ -382,6 +390,8 @@ class IRCNetwork(Network):
             else:
               self.userstable[c][new_nick] = None
           log_log("New list of users in %s: %s" % (c, str(self.userstable[c].keys())))
+        if self.on_event:
+          self.on_event('user-name',link=Link(self,User(self,new_nick),Group(self,chan)),old_name=nick)
 
     except Exception,e:
       log_error('Exception in top level action processing: %s' % str(e))

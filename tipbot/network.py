@@ -35,9 +35,10 @@ class Network:
   def dump_users(self):
     pass
 
-  def set_callbacks(self,on_command,on_identified):
+  def set_callbacks(self,on_command,on_identified,on_event):
     self.on_command=on_command
     self.on_identified=on_identified
+    self.on_event=on_event
 
   def get_last_active_time(self,user_name,group_name=None):
     return None

@@ -385,6 +385,21 @@ def OnIdentified(link, identified):
     return
   RunNextCommand(link, identified)
 
+def OnEventProxy(event,*args,**kwargs):
+  log_info('Got event %s, args %s' % (event, str(kwargs)))
+  if disabled:
+    log_info('Ignoring event while disabled')
+    return
+  link=kwargs['link'] if 'link' in kwargs else None
+  if link:
+    link.batch_send_start()
+  try:
+    OnEvent(event,*args,**kwargs)
+  except Exception,e:
+    log_error('Exception handling event %s: %s' % (str(event),str(e)))
+  if link:
+    link.batch_send_done()
+
 def RegisterCommands():
   RegisterCommand({'module': 'builtin', 'name': 'help', 'parms': '[module]', 'function': Help, 'help': "Displays help about %s" % config.tipbot_name})
   RegisterCommand({'module': 'builtin', 'name': 'commands', 'parms': '[module]', 'function': Commands, 'help': "Displays list of commands"})
@@ -453,7 +468,7 @@ for network_setup in start_networks:
   name=network_name or network_type
   try:
     network=registered_networks[network_type](name=name)
-    network.set_callbacks(OnCommandProxy,OnIdentified)
+    network.set_callbacks(OnCommandProxy,OnIdentified,OnEventProxy)
     if network.connect():
       AddNetwork(network)
   except Exception,e:

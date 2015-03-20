@@ -14,6 +14,7 @@ from tipbot.utils import *
 
 modules = dict()
 commands = dict()
+event_handlers = dict()
 calltable=dict()
 
 def SendToProxy(link,msg):
@@ -123,6 +124,11 @@ def RegisterCommand(command):
     commands[command['name']] = []
   commands[command['name']].append(command)
 
+def RegisterEventHandler(eh):
+  if not eh['event'] in event_handlers:
+    event_handlers[eh['event']] = []
+  event_handlers[eh['event']].append(eh)
+
 def OnCommand(link,cmd,check_admin,check_registered):
   cmdparts = cmd[0].split(':')
   log_log('cmdparts: %s' % str(cmdparts))
@@ -178,6 +184,21 @@ def OnCommand(link,cmd,check_admin,check_registered):
     if not silent:
       link.send("Invalid command, try !help")
 
+def OnEvent(event,*args,**kwargs):
+  log_log('modulename: event %s' % str(event))
+  if not event in event_handlers:
+    return
+
+  for eh in event_handlers[event]:
+    Lock()
+    try:
+      log_log('Calling %s handler from module %s' % (str(event),eh['module']))
+      eh['function'](event,*args,**kwargs)
+    except:
+      raise
+    finally:
+      Unlock()
+
 def RunIdleFunctions(param=None):
   for module in modules:
     if 'idle' in modules[module]:
@@ -201,6 +222,7 @@ def RunModuleHelpFunction(module,link):
 
 def UnregisterModule(module):
   global commands
+  global event_handlers
   global idles
 
   if not module in modules:
@@ -219,5 +241,15 @@ def UnregisterModule(module):
     if len(newlist) > 0:
       new_commands[cmd] = newlist
   commands = new_commands
+
+  new_event_handlers = dict()
+  for cmd in event_handlers:
+    newlist = []
+    for c in event_handlers[cmd]:
+      if c['module'] != module:
+        newlist.append(c)
+    if len(newlist) > 0:
+      new_event_handlers[cmd] = newlist
+  event_handlers = new_event_handlers
 
   del modules[module]

@@ -387,6 +387,9 @@ def IdentityFromString(link,s):
     nick=parts[1]
   return network.name+':'+network.canonicalize(nick)
 
+def NetworkFromIdentity(identity):
+  return identity.split(':')[0]
+
 def NickFromIdentity(identity):
   return identity.split(':')[1]
 

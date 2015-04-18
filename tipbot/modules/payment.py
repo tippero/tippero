@@ -99,7 +99,7 @@ def UpdateCoin(data):
             continue
           log_log('UpdateCoin: Looking at payment %s' % str(p))
           confirmations = height-1-bh
-          confirmations_needed = max(config.payment_confirmations,ut-height)
+          confirmations_needed = max(config.payment_confirmations,ut)
           if confirmations >= confirmations_needed:
             log_info('Payment %s is now confirmed' % str(p))
             new_payments.append(p)
@@ -135,7 +135,6 @@ def UpdateCoin(data):
               tx_hash=p["tx_hash"]
               amount=p["amount"]
               bh = p["block_height"]
-              ut = p["unlock_time"]
               try:
                 recipient = GetIdentityFromPaymentID(payment_id)
                 if not recipient:

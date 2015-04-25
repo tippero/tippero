@@ -67,6 +67,9 @@ def Commands(link,cmd):
   module_name = GetParam(cmd,1)
 
   if module_name:
+    if not module_name in modules:
+      link.send_private("%s is not a module, see module list with !commands" % module_name)
+      return
     link.send_private("Commands for %s's %s module:" % (config.tipbot_name,module_name))
   else:
     link.send_private("Commands for %s (use !commands <modulename> for help about the module's commands):" % config.tipbot_name)

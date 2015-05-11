@@ -93,7 +93,7 @@ def UpdateCoin(data):
           payment_id=p["payment_id"]
           tx_hash = p["tx_hash"]
           bh = p["block_height"]
-          ut = p["block_height"]
+          ut = p["unlock_time"]
           amount=p["amount"]
           if redis_sismember("processed_txs",tx_hash):
             continue

@@ -314,6 +314,8 @@ class IRCNetwork(Network):
         self.update_last_active_time(chan,GetNick(who))
         # resplit to avoid splitting text that contains ':'
         text = data.split(' :',1)[1]
+        if self.on_event:
+          self.on_event('message',link=Link(self,User(self,GetNick(who)),Group(self,chan)),message=text)
         exidx = text.find('!')
         if exidx != -1 and len(text)>exidx+1 and text[exidx+1] in string.ascii_letters and self.is_acceptable_command_prefix(text[:exidx]):
             cmd = text.split('!')[1]

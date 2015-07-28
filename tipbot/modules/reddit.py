@@ -161,9 +161,10 @@ class RedditNetwork(Network):
                   author=parent_item.author.name
                   match=re.search("\+[0-9]*(\.[0-9]*)?",line)
                   amount=match.group(0)
-                  synthetic_cmd=['tip',author,amount.replace('+','')]
-                  log_log('Running synthetic command: %s' % (str(synthetic_cmd)))
-                  self.on_command(link,synthetic_cmd)
+                  if amount!='+':
+                    synthetic_cmd=['tip',author,amount.replace('+','')]
+                    log_log('Running synthetic command: %s' % (str(synthetic_cmd)))
+                    self.on_command(link,synthetic_cmd)
                 except Exception,e:
                   log_error('Failed to tip %s\'s parent: %s' % (item.id,str(e)))
     try:

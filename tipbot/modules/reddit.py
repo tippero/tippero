@@ -151,8 +151,8 @@ class RedditNetwork(Network):
         else:
           # reddit special: +x as a reply means tip
           if not is_pm and hasattr(item,'parent_id'):
-            line=line.replace(self.keyword,'').strip()
-            if re.match("\+[0-9]*(\.[0-9]*)?",line):
+            if re.search("\+[0-9]*(\.[0-9]*)?[\t ]+"+self.keyword,line) or re.search(self.keyword+"[\t ]+\+[0-9]*(\.[0-9]*)?",line):
+              line=line.replace(self.keyword,'').strip()
               if self.on_command:
                 try:
                   parent_item=self.reddit.get_info(thing_id=item.parent_id)

@@ -29,7 +29,8 @@ def Announce(link,cmd):
     return
   nextid=redis_get('cryptokingdom:announcements:nextid')
   if nextid==None:
-    nextid=0
+    nextid=1
+  nextid=long(nextid)
   text = " ".join(cmd[1:])
   redis_hset('cryptokingdom:announcements',nextid,'From %s: %s'%(link.user.nick,text))
   nextid+=1
@@ -54,8 +55,8 @@ def Cancel(link,cmd):
   redis_hdel('cryptokingdom:announcements',which)
 
 def Help(link):
-  link.send(link,'Announce anything that you want others to know')
-  link.send(link,'Offers, auctions, other information')
+  link.send_private('Announce anything that you want others to know')
+  link.send_private('Offers, auctions, other information')
 
 
 

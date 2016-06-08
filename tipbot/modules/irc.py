@@ -443,6 +443,8 @@ class IRCNetwork(Network):
         (r,w,x)=select.select([self.irc.fileno()],[],[],1)
         if self.irc.fileno() in r:
           newdata=self._irc_recv(4096,socket.MSG_DONTWAIT)
+          if len(newdata) == 0:
+            raise RuntimeError('0 bytes received, EOF')
         else:
           newdata = None
         if self.irc.fileno() in x:

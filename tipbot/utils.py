@@ -76,8 +76,18 @@ def GetIdentityFromPaymentID(p):
     identity = "freenode:"+identity
   return identity
 
+def IsAddressLengthValid(address):
+  if type(coinspecs.address_length[0]) == list:
+    for allist in coinspecs.address_length:
+      if len(address) >= allist[0] and len(address) <= allist[1]:
+        return True
+  else:
+    if len(address) >= coinspecs.address_length[0] and len(address) <= coinspecs.address_length[1]:
+      return True
+  return False
+
 def IsValidAddress(address):
-  if len(address) < coinspecs.address_length[0] or len(address) > coinspecs.address_length[1]:
+  if not IsAddressLengthValid(address):
     return False
   for prefix in coinspecs.address_prefix:
     if address.startswith(prefix):

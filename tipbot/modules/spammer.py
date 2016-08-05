@@ -57,7 +57,7 @@ def OnMessage(event,*args,**kwargs):
 
   log_info("Testing: " + line)
   for expr in ["astounding!", "triple your btc!", "pm me to begin!", "hatt uu"]:
-    if re.match(expr+".*",line):
+    if re.match(.*+expr+".*",line):
       link=kwargs['link']
       Ban(link)
       return

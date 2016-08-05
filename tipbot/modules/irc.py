@@ -315,7 +315,7 @@ class IRCNetwork(Network):
         # resplit to avoid splitting text that contains ':'
         text = data.split(' :',1)[1]
         if self.on_event:
-          self.on_event('message',link=Link(self,User(self,GetNick(who)),Group(self,chan)),message=text)
+          self.on_event('message',link=Link(self,User(self,GetNick(who),who),Group(self,chan)),message=text)
         exidx = text.find('!')
         if exidx != -1 and len(text)>exidx+1 and text[exidx+1] in string.ascii_letters and self.is_acceptable_command_prefix(text[:exidx]):
             cmd = text.split('!')[1]
@@ -340,7 +340,7 @@ class IRCNetwork(Network):
           self.userstable[chan][nick] = None
         log_log("New list of users in %s: %s" % (chan, str(self.userstable[chan].keys())))
         if self.on_event:
-          self.on_event('user-joined',link=Link(self,User(self,nick),Group(self,chan)))
+          self.on_event('user-joined',link=Link(self,User(self,nick,who),Group(self,chan)))
 
       elif action == 'PART':
         nick = GetNick(who)

@@ -10,9 +10,10 @@
 #
 
 class User:
-  def __init__(self,network,nick):
+  def __init__(self,network,nick,ident=None):
     self.network=network
     self.nick=nick
+    self.ident=ident
 
   def check_registered(self):
     pass

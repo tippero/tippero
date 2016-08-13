@@ -34,8 +34,6 @@ def Ban(link):
     net._irc_sendmsg(cmd)
     cmd="KICK " + chan + " " + link.user.nick
     net._irc_sendmsg(cmd)
-    cmd="MODE " + chan + " -b " + link.user.ident
-    net._irc_sendmsg(cmd)
   except:
     pass
 

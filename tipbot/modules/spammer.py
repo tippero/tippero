@@ -67,6 +67,12 @@ def OnMessage(event,*args,**kwargs):
       Ban(link)
       return
 
+def AddTrigger(link,cmd):
+  triggers.append(" ".join(cmd[1:]))
+
+def ShowTriggers(link,cmd):
+  link.send(", ".join(triggers))
+
 def Help(link):
   link.send_private('Ban assholes')
 
@@ -84,4 +90,18 @@ RegisterEventHandler({
   'module': __name__,
   'event': 'message',
   'function': OnMessage,
+})
+RegisterCommand({
+  'module': __name__,
+  'name': 'add_trigger',
+  'function': AddTrigger,
+  'admin': True,
+  'help': "add keyword trigger to spammer trap"
+})
+RegisterCommand({
+  'module': __name__,
+  'name': 'show_triggers',
+  'function': ShowTriggers,
+  'admin': True,
+  'help': "list keyword triggers"
 })

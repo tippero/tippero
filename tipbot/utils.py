@@ -17,6 +17,8 @@ import time
 import threading
 import math
 import string
+import random
+from Crypto.Random.random import getrandbits
 from decimal import *
 import tipbot.config as config
 import tipbot.coinspecs as coinspecs
@@ -55,14 +57,19 @@ def GetParam(parms,idx):
     return parms[idx]
   return None
 
-def GetPaymentID(link):
+def GetPaymentID(link,random=False):
   salt="2u3g55bkwrui32fi3g4bGR$j5g4ugnujb-"+coinspecs.name+"-";
+  if random:
+    salt = salt + "-" + str(time.time()) + "-" + str(getrandbits(128))
   p = hashlib.sha256(salt+link.identity()).hexdigest();
   try:
     redis_hset("paymentid",p,link.identity())
   except Exception,e:
     log_error('GetPaymentID: failed to set payment ID for %s to redis: %s' % (link.identity(),str(e)))
   return p
+
+def GetRandomPaymentID(link):
+  return GetPaymentID(link, True)
 
 def GetIdentityFromPaymentID(p):
   if not redis_hexists("paymentid",p):

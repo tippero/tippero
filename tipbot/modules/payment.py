@@ -161,6 +161,9 @@ def UpdateCoin(data):
 def Deposit(link,cmd):
   Help(link)
 
+def RandomPaymentID(link,cmd):
+  link.send_private("  New payment ID: %s" % GetRandomPaymentID(link))
+
 def Help(link):
   GetAccount(link.identity())
   link.send_private("You can send %s to your account:" % coinspecs.name);
@@ -168,7 +171,8 @@ def Help(link):
   link.send_private("  Address: %s" % address)
   if config.openalias_address != None:
     link.send_private("    (or %s when using OpenAlias)" % config.openalias_address)
-  link.send_private("  Payment ID: %s" % GetPaymentID(link))
+  link.send_private("  Main payment ID: %s" % GetPaymentID(link))
+  link.send_private("  OR generate random payment ids at will with: !randompid")
   link.send_private("Incoming transactions are credited after %d confirmations" % config.payment_confirmations)
 
 RegisterModule({
@@ -181,5 +185,12 @@ RegisterCommand({
   'name': 'deposit',
   'function': Deposit,
   'help': "Show instructions about depositing %s" % coinspecs.name
+})
+RegisterCommand({
+  'module': __name__,
+  'name': 'randompid',
+  'function': RandomPaymentID,
+  'registered': True,
+  'help': "Generate a new random payment ID"
 })
 

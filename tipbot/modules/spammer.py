@@ -45,7 +45,7 @@ def OnUserJoined(event,*args,**kwargs):
     Ban(link)
 
 triggers=[l.lower() for l in [
-    "astounding!", "triple your btc", "pm me to begin", "hatt uu",
+    "triple your btc", "pm me to begin", "hatt uu",
     "accelerate the blockchain", "u stappid", "me a message to begin",
     "the ops have confirmed", "expanding technology", "exploding technology",
     "allah is doing", "pm me to get going", "defragment the blockchain to grow"

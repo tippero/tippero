@@ -22,7 +22,7 @@ from tipbot.link import Link
 from tipbot.redisdb import *
 from tipbot.command_manager import *
 
-def Ban(link):
+def BanUser(link):
   log_info('Banning %s (%s)' % (link.user.nick, link.user.ident))
   if not link.group:
     return
@@ -37,12 +37,25 @@ def Ban(link):
   except:
     pass
 
+def MuteUser(link):
+  log_info('Muting %s (%s)' % (link.user.nick, link.user.ident))
+  if not link.group:
+    return
+  chan=link.group.name
+  log_info("chan: " + chan)
+  net=link.network
+  try:
+    cmd="MODE " + chan + " +m " + link.user.ident
+    net._irc_sendmsg(cmd)
+  except:
+    pass
+
 def OnUserJoined(event,*args,**kwargs):
   link=kwargs['link']
 
   nick=link.user.nick.lower()
   if nick=="lbft" or nick=="lbft_":
-    Ban(link)
+    BanUser(link)
 
 triggers=[l.lower() for l in [
     "triple your btc", "pm me to begin", "hatt uu",
@@ -55,6 +68,11 @@ def OnMessage(event,*args,**kwargs):
   line=kwargs['message']
   if not line:
     return
+  link=kwargs['link']
+  if IsAdmin(link):
+    return
+  if link.nick in config.allowed:
+    return
 
   line=re.sub(r'\x03[0-9]?[0-9]?','',line)
   line=re.sub(r'\x0f','',line)
@@ -63,8 +81,7 @@ def OnMessage(event,*args,**kwargs):
   log_info("Testing: " + line)
   for expr in triggers:
     if re.match(".*"+expr+".*",line):
-      link=kwargs['link']
-      Ban(link)
+      MuteUser(link)
       return
 
 def AddTrigger(link,cmd):
@@ -72,6 +89,38 @@ def AddTrigger(link,cmd):
 
 def ShowTriggers(link,cmd):
   link.send(", ".join(triggers))
+
+def Ban(link,cmd):
+  link.send("disabled") # need to ban by ident
+  return
+
+  try:
+    who=cmd[1]
+  except Exception,e:
+    link.send("usage: ban <nick>")
+    return
+  group=link.group
+  if not group:
+    link.send("Not in a channel")
+    return
+  l=Link(link.network,User(link.network,who),group)
+  BanUser(l)
+
+def Mute(link,cmd):
+  link.send("disabled") # need to mute by ident
+  return
+
+  try:
+    who=cmd[1]
+  except Exception,e:
+    link.send("usage: mute <nick>")
+    return
+  group=link.group
+  if not group:
+    link.send("Not in a channel")
+    return
+  l=Link(link.network,User(link.network,who),group)
+  MuteUser(l)
 
 def Help(link):
   link.send_private('Ban assholes')
@@ -104,4 +153,18 @@ RegisterCommand({
   'function': ShowTriggers,
   'admin': True,
   'help': "list keyword triggers"
+})
+RegisterCommand({
+  'module': __name__,
+  'name': 'ban',
+  'function': Ban,
+  'admin': True,
+  'help': "ban a user"
+})
+RegisterCommand({
+  'module': __name__,
+  'name': 'mute',
+  'function': Mute,
+  'admin': True,
+  'help': "mute a user"
 })

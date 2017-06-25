@@ -116,4 +116,4 @@ kitsune_max_loss = 35
 # how much are we prepared to lose as a ratio of our current pot
 kitsune_max_loss_ratio = 0.1
 
-spammer_allowed = ['_Slack', '_Telegram', 'i2p-relay']
+spammer_allowed = ['_Slack', 'i2p-relay']

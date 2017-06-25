@@ -45,7 +45,7 @@ def MuteUser(link):
   log_info("chan: " + chan)
   net=link.network
   try:
-    cmd="MODE " + chan + " +m " + link.user.ident
+    cmd="MODE " + chan + " +q " + link.user.ident
     net._irc_sendmsg(cmd)
   except:
     pass

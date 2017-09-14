@@ -28,6 +28,7 @@ payment_confirmations = 6
 tipbot_balance_cache_time = 35 # seconds
 site_game_salt = ''
 openalias_address = None
+rpc_timeout = 180
 
 admins = ["freenode:moneromooo", "freenode:moneromoo"]
 

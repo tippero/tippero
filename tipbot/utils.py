@@ -215,7 +215,7 @@ def StringToUnits(s):
 
 def SendJSONRPCCommand(host,port,method,params):
   try:
-    http = httplib.HTTPConnection(host,port,timeout=20)
+    http = httplib.HTTPConnection(host,port,timeout=config.rpc_timeout)
   except Exception,e:
     log_error('SendJSONRPCCommand: Error connecting to %s:%u: %s' % (host, port, str(e)))
     raise
@@ -252,7 +252,7 @@ def SendJSONRPCCommand(host,port,method,params):
 
 def SendHTMLCommand(host,port,method):
   try:
-    http = httplib.HTTPConnection(host,port,timeout=20)
+    http = httplib.HTTPConnection(host,port,timeout=config.rpc_timeout)
   except Exception,e:
     log_error('SendHTMLCommand: Error connecting to %s:%u: %s' % (host, port, str(e)))
     raise

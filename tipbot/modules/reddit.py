@@ -15,6 +15,7 @@ import time
 import threading
 import re
 import praw
+import logging
 import tipbot.config as config
 from tipbot.log import log_error, log_warn, log_info, log_log
 from tipbot.user import User
@@ -44,7 +45,7 @@ class RedditNetwork(Network):
     try:
       cfg=config.network_config[self.name]
       self.login=cfg['login']
-      password=GetPassword(self.name)
+      password=GetPassword(self.name+'/password')
       self.subreddits=cfg['subreddits']
       user_agent=cfg['user_agent']
       self.update_period=cfg['update_period']
@@ -52,9 +53,19 @@ class RedditNetwork(Network):
       self.keyword=cfg['keyword']
       self.use_unread_api=cfg['use_unread_api']
       self.cache_timeout=cfg['cache_timeout']
+      client_id=GetPassword(self.name+'/client_id')
+      client_secret=GetPassword(self.name+'/client_secret')
+      username=GetPassword(self.name+'/username')
 
-      self.reddit=praw.Reddit(user_agent=user_agent,cache_timeout=self.cache_timeout)
-      self.reddit.login(self.login,password)
+      if False:
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.DEBUG)
+        logger = logging.getLogger('prawcore')
+        logger.setLevel(logging.DEBUG)
+        logger.addHandler(handler)
+
+      self.reddit=praw.Reddit(client_id=client_id,client_secret=client_secret,password=password,user_agent=user_agent,username=username)
+      log_info("Logged in reddit as " + str(self.reddit.user.me()))
       self.items_cache=dict()
 
       self.stop = False
@@ -107,18 +118,23 @@ class RedditNetwork(Network):
       return
     if not hasattr(item.author,'name'):
       log_warn('author of %s has no name field, ignored' % str(item.id))
-      try:
-        item.mark_as_read()
-      except Exception,e:
-        log_warning('Failed to mark %s as read: %s' % (item.id,str(e)))
+      if True:
+        try:
+          item.mark_read()
+        except Exception,e:
+          log_warn('Failed to mark %s as read: %s' % (item.id,str(e)))
       return
 
     author=self.canonicalize(item.author.name)
-    if author==self.canonicalize(self.login):
+    if author and author==self.canonicalize(self.login):
       return
 
     if item.id in self.last_seen_ids:
-      #log_log('Already seen %s %.1f hours ago by %s: %s (%s), skipping' % (item.id,age/3600,str(author),repr(title),repr(item.body)))
+      log_log('Already seen %s %.1f hours ago by %s: %s (%s), skipping' % (item.id,age/3600,str(author),repr(title),repr(item.body)))
+      try:
+        item.mark_read()
+      except Exception,e:
+        log_warn('Failed to mark %s as read: %s' % (item.id,str(e)))
       return
 
     age=time.time()-item.created_utc
@@ -155,7 +171,7 @@ class RedditNetwork(Network):
               line=line.replace(self.keyword,'').strip()
               if self.on_command:
                 try:
-                  parent_item=self.reddit.get_info(thing_id=item.parent_id)
+                  parent_item=next(self.reddit.info([item.parent_id]))
                   if not hasattr(parent_item,'author'):
                     raise RuntimeError('Parent item has no author')
                   author=parent_item.author.name
@@ -167,10 +183,11 @@ class RedditNetwork(Network):
                     self.on_command(link,synthetic_cmd)
                 except Exception,e:
                   log_error('Failed to tip %s\'s parent: %s' % (item.id,str(e)))
-    try:
-      item.mark_as_read()
-    except Exception,e:
-      log_warning('Failed to mark %s as read: %s' % (item.id,str(e)))
+    if True:
+      try:
+        item.mark_read()
+      except Exception,e:
+        log_warn('Failed to mark %s as read: %s' % (item.id,str(e)))
 
   def _schedule_reply(self,item,recipient,text):
     log_log('scheduling reply to %s:%s: %s' % (item.id if item else '""',recipient or '""',text))
@@ -214,7 +231,10 @@ class RedditNetwork(Network):
         if fullname in self.items_cache:
           item=self.items_cache[fullname]
         if not item:
-          item=self.reddit.get_info(thing_id=fullname)
+          item = self.reddit.mesage(fullname)
+        if not item:
+          gen=self.reddit.info([fullname])
+          item=next(gen, None)
         if not item:
           log_error('Failed to find item %s to post %s' % (fullname,text))
           redis_lpop('reddit:replies')
@@ -226,9 +246,6 @@ class RedditNetwork(Network):
 
       redis_lpop('reddit:replies')
 
-    except praw.errors.RateLimitExceeded,e:
-      log_info('Rate limited trying to send %s, will retry: %s' % (data,str(e)))
-      return False
     except Exception,e:
       log_error('Error sending %s, will retry: %s' % (data,str(e)))
       return False
@@ -256,15 +273,15 @@ class RedditNetwork(Network):
         self._parse(message,not message.was_comment)
 
     else:
-      messages=self.reddit.get_inbox()
-      for message in messages:
-        if not message.was_comment:
+      for message in self.reddit.inbox.unread(limit=self.load_limit):
+        #if not message.was_comment:
           self._parse(message,True)
 
-      sr=self.reddit.get_subreddit("+".join(self.subreddits))
-      comments=sr.get_comments(limit=self.load_limit)
-      for comment in comments:
-        self._parse(comment,False)
+      #print "Submissions from %s" % ("+".join(self.subreddits))
+      #sr=self.reddit.subreddit("+".join(self.subreddits))
+      #for s in sr.new(limit=self.load_limit):
+      #  for comment in s.comments:
+      #    self._parse(comment,False)
 
     while self._post_next_reply():
       pass

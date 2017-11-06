@@ -9,6 +9,7 @@
 # any later version.
 #
 
+import time
 import tipbot.config as config
 from tipbot.utils import *
 
@@ -23,7 +24,7 @@ def SendToProxy(link,msg):
 def RunRegisteredCommand(link,ifyes,yesdata,ifno,nodata):
   if link.identity() not in calltable:
     calltable[link.identity()] = []
-  calltable[link.identity()].append([link,ifyes,yesdata,ifno,nodata])
+  calltable[link.identity()].append([link,ifyes,yesdata,ifno,nodata,time.time()+10])
   if link.network.is_identified(link):
     RunNextCommand(link,True)
   else:
@@ -57,6 +58,16 @@ def RunNextCommand(link,registered):
     del calltable[identity][0]
   finally:
     Unlock()
+
+def PruneOldWaitingCommands():
+  Lock()
+  now=time.time()
+  for identity in calltable.keys():
+    while len(calltable[identity])>0 and calltable[identity][0][5]<now:
+      log_info('deleting old command: %s, %s' % (str(calltable[identity][0][1]), str(calltable[identity][0][3])))
+      link.send("Nickserv didn't reply, gonna have to deny access, mate")
+      del calltable[identity][0]
+  Unlock()
 
 def Commands(link,cmd):
   if IsAdmin(link):
@@ -213,6 +224,7 @@ def RunIdleFunctions(param=None):
         log_error("Exception running idle function %s from module %s: %s" % (str(f),module,str(e)))
       finally:
         Unlock()
+  PruneOldWaitingCommands()
 
 def RunModuleHelpFunction(module,link):
   if module in modules:

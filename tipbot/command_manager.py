@@ -64,6 +64,7 @@ def PruneOldWaitingCommands():
   now=time.time()
   for identity in calltable.keys():
     while len(calltable[identity])>0 and calltable[identity][0][5]<now:
+      link=calltable[identity][0][0]
       log_info('deleting old command: %s, %s' % (str(calltable[identity][0][1]), str(calltable[identity][0][3])))
       link.send("Nickserv didn't reply, gonna have to deny access, mate")
       del calltable[identity][0]

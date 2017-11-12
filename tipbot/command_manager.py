@@ -24,7 +24,7 @@ def SendToProxy(link,msg):
 def RunRegisteredCommand(link,ifyes,yesdata,ifno,nodata):
   if link.identity() not in calltable:
     calltable[link.identity()] = []
-  calltable[link.identity()].append([link,ifyes,yesdata,ifno,nodata,time.time()+10])
+  calltable[link.identity()].append([link,ifyes,yesdata,ifno,nodata,time.time()+20])
   if link.network.is_identified(link):
     RunNextCommand(link,True)
   else:

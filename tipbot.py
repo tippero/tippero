@@ -108,6 +108,9 @@ for modulename in modulenames:
 
 def GetBalance(link,cmd):
   nick=link.user.nick
+  if link.group and nick.startswith('blackbab'):
+    link.send_private("Stop spamming the public channel")
+    return
   try:
     balance,confirming = RetrieveBalance(link)
     sbalance = AmountToString(balance)

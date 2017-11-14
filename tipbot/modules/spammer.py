@@ -71,7 +71,7 @@ def OnMessage(event,*args,**kwargs):
   link=kwargs['link']
   if IsAdmin(link):
     return
-  if link.nick in config.allowed:
+  if config.spammer_allowed and link.user.nick in config.spammer_allowed:
     return
 
   line=re.sub(r'\x03[0-9]?[0-9]?','',line)

@@ -197,7 +197,7 @@ def LinkingAccounts(link,cmd):
   link.send_private('any account interchangeably. If the accounts are on different networks')
   link.send_private('(eg, IRC and Reddit), the user names need to be prefixed with the network\'s')
   link.send_private('name (freenode: for Freenode IRC, reddit: for Reddit), like this:')
-  like.send_private(' !link_account reddit:myredditname')
+  link.send_private(' !link_account reddit:myredditname')
   link.send_private('Linking accounts is irreversible, so make sure you only link to accounts')
   link.send_private('under your control')
 

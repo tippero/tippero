@@ -45,6 +45,7 @@ class IRCNetwork(Network):
     self.current_send_delay = irc_min_send_delay
     self.quitting = False
     self.buffered_data = ""
+    self.known = {}
 
   def connect(self):
     try:
@@ -165,6 +166,19 @@ class IRCNetwork(Network):
     if re.match("%s[\t ]*[:,]?$"%config.tipbot_name, s):
       return True
     return False
+
+  def evict_known(self, nick):
+    del self.known[nick]
+    self.registered_users.discard(Link(self,User(self,nick),None).identity())
+    log_info("now unknown: " + Link(self,User(self,nick),None).identity())
+
+  def add_known(self, nick):
+    self.known[nick] = time.time()
+    self.registered_users.discard(Link(self,User(self,nick),None).identity())
+    log_info("now known: " + Link(self,User(self,nick),None).identity())
+
+  def is_known(self, nick):
+    return time.time() - self.known[nick] if nick in self.known else 0
 
   def update(self):
     try:
@@ -306,6 +320,7 @@ class IRCNetwork(Network):
               if who_chan_user[0] in ["@","+"]:
                 who_chan_user = who_chan_user[1:]
               self.userstable[who_chan][who_chan_user] = None
+            self.add_known(who_chan_user)
           log_log("New list of users in %s: %s" % (who_chan, str(self.userstable[who_chan].keys())))
         except Exception,e:
           log_error('Failed to parse "353" line: %s: %s' % (data, str(e)))
@@ -331,6 +346,7 @@ class IRCNetwork(Network):
 
       elif action == 'JOIN':
         nick = GetNick(who)
+        self.add_known(nick)
         log_info('%s joined the channel' % nick)
         if not chan in self.userstable:
           self.userstable[chan] = dict()
@@ -344,6 +360,7 @@ class IRCNetwork(Network):
 
       elif action == 'PART':
         nick = GetNick(who)
+        self.evict_known(nick)
         log_info('%s left the channel' % nick)
         if not nick in self.userstable[chan]:
           log_warn('%s left, but was not in %s' % (nick, chan))
@@ -355,6 +372,7 @@ class IRCNetwork(Network):
 
       elif action == 'QUIT':
         nick = GetNick(who)
+        self.evict_known(nick)
         log_info('%s quit' % nick)
         removed_list = ""
         for chan in self.userstable:
@@ -383,6 +401,8 @@ class IRCNetwork(Network):
         nick = GetNick(who)
         new_nick = cparts[len(cparts)-1].lower()
         log_info('%s renamed to %s' % (nick, new_nick))
+        self.evict_known(nick)
+        self.add_known(new_nick)
         for c in self.userstable:
           log_log('checking %s' % c)
           if nick in self.userstable[c]:

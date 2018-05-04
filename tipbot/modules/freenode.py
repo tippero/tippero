@@ -28,6 +28,12 @@ class FreenodeNetwork(IRCNetwork):
 
   def identify(self,link):
     nick = link.user.nick
+    t = self.is_known(nick)
+    if t < 60:
+      log_info('%s is not known, or only time for %d seconds' % (nick, t))
+      if self.on_identified:
+        self.on_identified(link,False)
+      return
     log_info('Asking nickserv whether %s is identified' % nick)
     self.send_to('nickserv', "ACC " + nick)
 

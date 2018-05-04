@@ -181,7 +181,7 @@ def OnCommand(link,cmd,check_admin,check_registered):
     if 'admin' in c and c['admin']:
       check_admin(link,c['function'],cmd,SendToProxy,"You must be admin")
     elif 'registered' in c and c['registered']:
-      check_registered(link,c['function'],cmd,SendToProxy,"You must be registered with Freenode")
+      check_registered(link,c['function'],cmd,SendToProxy,"You must be registered with Freenode, or known for a minute")
     else:
       Lock()
       try:

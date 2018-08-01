@@ -38,7 +38,9 @@ no_rain_to_nicks = []
 # commands used by other bots, to avoid "unknown command" complaints
 silent_invalid_commands = {
   'freenode': [
-    'price','worth','net','pools','calc','convert','val']
+    'price','worth','net','pools','calc','convert','val',
+    'consume', 'getBalance', 'marketbuy', 'marketsell', 'owns',
+    'buy', 'sell', 'quote']
 }
 
 network_config = {
@@ -52,7 +54,7 @@ network_config = {
     'sasl_name': 'monero-tipbot',
     'welcome_line': 'Welcome to the freenode Internet Relay Chat Network',
     'timeout_seconds': 600,
-    'channels': ['#txtptest000'],
+    'channels': ['#txtptest000', '##ck-d20'],
   },
   'reddit': {
     'subreddits': ['test'],

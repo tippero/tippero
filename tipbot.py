@@ -255,7 +255,7 @@ def Help(link,cmd):
 
 def Info(link,cmd):
   link.send_private("Info for %s:" % config.tipbot_name)
-  link.send_private("Copyright 2014,2015 moneromooo - http://duckpool.mooo.com/tipbot/")
+  link.send_private("Copyright 2014,2015 moneromooo - https://github.com/tippero/tippero")
   link.send_private("Type !help, or !commands for a list of commands")
   link.send_private("NO WARRANTY, YOU MAY LOSE YOUR COINS")
   link.send_private("By sending your %s to %s, you are giving up their control" % (coinspecs.name, config.tipbot_name))
